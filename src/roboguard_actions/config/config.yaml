@@ -1,4 +1,4 @@
-odrive_control:
+roboguard_actions:
   ros__parameters:
     tracks:
       left_joint_names: ['track_fl_j', 'track_rl_j']

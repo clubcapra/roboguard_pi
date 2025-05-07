@@ -7,12 +7,12 @@
   <maintainer email="capra@ens.etsmtl.ca">Capra</maintainer>
   <license>MIT</license>
 
-  <depend>rclpy</depend>
-  <depend>trajectory_msgs</depend>
-  <depend>control_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>std_msgs</depend>
-  <depend>capra_control_msgs</depend>
+  <build_depend>rclpy</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>capra_control_msgs</build_depend>
 
   <export>
     <build_type>ament_python</build_type>
