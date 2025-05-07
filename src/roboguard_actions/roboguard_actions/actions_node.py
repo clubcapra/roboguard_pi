@@ -263,7 +263,7 @@ class ActionsNode(Node):
         return Header(frame_id=self.get_name(), stamp=self.get_clock().now().to_msg())
         
     def mps2tracks(self, speed: float) -> float:
-        return self.wheelRadius * speed / self.tracksGearRatio
+        return speed / self.wheelRadius.value / self.tracksGearRatio.value
     
     def onEnable(self, enable: Bool):
         # Here, enable is not time critical, roboguard_odrive will read the enable topic as well
@@ -277,7 +277,7 @@ class ActionsNode(Node):
         
         for name in self.leftJointNames.value:
             joints.append(name)
-            vels.append(self.mps2tracks(tracksCmd.left))
+            vels.append(-self.mps2tracks(tracksCmd.left))
         for name in self.rightJointNames.value:
             joints.append(name)
             vels.append(self.mps2tracks(tracksCmd.right))

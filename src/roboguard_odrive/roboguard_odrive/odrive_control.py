@@ -84,7 +84,7 @@ class ODriveControl(Node):
         self.jointTrajectorySub = self.create_subscription(
             JointTrajectory, 'trajectory', self.onJointTrajectoryMsg, 1)
         self.jointJogSub = self.create_subscription(
-        JointJog, 'jog', self.onJointJogMsg, 5)
+        JointJog, 'jog', self.onJointJogMsg, 1)
         self.enableSub = self.create_subscription(Bool, 'enable', self.onEnableMsg, 1)
         self.estopSub = self.create_subscription(Bool, 'estop', self.onEStopMsg, 1)
 
@@ -334,19 +334,23 @@ class ODriveControl(Node):
                     if self.enable:
                         now = self.get_clock().now()
                         if self.posActions[name] is not None and (now - self.posActions[name][0] < Duration(nanoseconds=0.5*S_TO_NS)):
-                            node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
-                            node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
+                            if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
+                                node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
                             node.set_position(self.posActions[name][1], 0, self.posActions[name][3])
                             
                         elif self.velActions[name] is not None and (now - self.velActions[name][0] < Duration(nanoseconds=0.5*S_TO_NS)):
-                            node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_TRAP_TRAJ)
-                            node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
+                            if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
+                                node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
                             node.set_velocity(self.velActions[name][1])
                         else:
-                            node.set_state_msg(ODriveAxisState.IDLE)
+                            if node.state != ODriveAxisState.IDLE:
+                                node.set_state_msg(ODriveAxisState.IDLE)
                             node.feed_watchdog_msg()
                     else:
-                        node.set_state_msg(ODriveAxisState.IDLE)
+                        if node.state != ODriveAxisState.IDLE:
+                            node.set_state_msg(ODriveAxisState.IDLE)
                         node.feed_watchdog_msg()
             await asyncio.sleep(1.0/self.canWriteRate.value)
                     
