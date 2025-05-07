@@ -15,6 +15,7 @@ from launch.event_handlers import OnShutdown
 def generate_launch_description():
     # Get the launch directory
     pkg_roboguard_odrive = get_package_share_directory("roboguard_odrive")
+    pkg_roboguard_actions = get_package_share_directory("roboguard_actions")
 
     start_can_cmd = ExecuteProcess(
         cmd=[[
@@ -41,11 +42,18 @@ def generate_launch_description():
             os.path.join(pkg_roboguard_odrive, "launch", "roboguard_odrive.launch.py"),
         ),
     )
+    
+    actions = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_roboguard_actions, "launch", "actions.launch.py"),
+        ),
+    )
 
     return LaunchDescription(
         [
             start_can_cmd,
             shutdown,
             odrive,
+            actions,
         ]
     )

@@ -1,0 +1,19 @@
+odrive_control:
+  ros__parameters:
+    tracks:
+      left_joint_names: ['track_fl_j', 'track_rl_j']
+      right_joint_names: ['track_fr_j', 'track_rr_j']
+
+      wheel_radius: 0.1075
+      wheel_separation: 0.175
+      gear_ratio: 0.03333
+      max_speed: 58
+
+    flippers:
+      front_left_name: 'flipper_fl_j'
+      rear_left_name: 'flipper_rl_j'
+      front_right_name: 'flipper_fr_j'
+      rear_right_name: 'flipper_rr_j'
+
+      max_speed: 50.0
+      gear_ratio: 0.00185185

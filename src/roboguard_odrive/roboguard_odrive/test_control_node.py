@@ -35,6 +35,8 @@ class ODrivePub(Node):
         from rcl_interfaces.msg import ParameterDescriptor, ParameterType
         super().__init__('odrive_pub')
         
+        self.get_logger().info("Started")
+        
         self.jointTrajectoryPub = self.create_publisher(
             JointTrajectory, 'trajectory', 1)
         self.jointJogPub = self.create_publisher(
@@ -66,7 +68,7 @@ class ODrivePub(Node):
         self.i = (self.i + 1) % self.cycle
         
 def main(args=None):
-    rclpy.init()
+    rclpy.init(args=args)
     node = ODrivePub()
     rclpy.spin(node)
         

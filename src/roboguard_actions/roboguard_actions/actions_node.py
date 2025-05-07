@@ -9,6 +9,7 @@ from pathlib import Path
 
 # ros imports
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.constants import S_TO_NS
 from rclpy.duration import Duration
@@ -71,6 +72,10 @@ class Instruction:
         self.offset: float = 0.0
         self.setOffset: float = 0.0
         self.hasAction = False
+    
+    @property
+    def initialized(self) -> bool:
+        return all([v() is not None for v in [*self.offsets, *self.setOffsets]])
         
     def update(self): ...
     
@@ -84,13 +89,17 @@ class SingleInstruction(Instruction):
         self.initial: float = 0.0
         
     def update(self):
+        if not self.initialized:
+            return
         self.offset = self.initial + self.offsets[0]() - (self.setOffsets[0]() - self.setOffset)
         
     def compute(self, command: float, enabled: float):
+        if not self.initialized:
+            return
         self.singleControl.state = command != 0 and enabled
         
         if self.singleControl.state:
-            self.setOffset = self.offset + sign(command) * FLIPPER_MOVE_OFFSET
+            self.setOffset = self.offset + sign(command) * rev2rad(FLIPPER_MOVE_OFFSET)
             self.hasAction = True
         elif self.singleControl.unlatched:
             self.setOffset = self.offset
@@ -104,19 +113,23 @@ class PairInstruction(Instruction):
         self.pairControl = StateBool()
         
     def update(self):
+        if not self.initialized:
+            return
         self.offset = mean([o() - (s() - self.setOffset) for o, s in zip(self.offsets, self.setOffsets)])
         
     def compute(self, command: float, enabled: bool):
+        if not self.initialized:
+            return
         self.pairControl.state = command != 0 and enabled
         
         if self.pairControl.state:
-            self.setOffset = self.offset + sign(command) * FLIPPER_MOVE_OFFSET
+            self.setOffset = self.offset + sign(command) * rev2rad(FLIPPER_MOVE_OFFSET)
             self.hasAction = True
         elif self.pairControl.unlatched:
             self.setOffset = self.offset
             self.hasAction = True
         else:
-            self.hasAction = True
+            self.hasAction = False
             
 class AllInstruction(Instruction):
     def __init__(self, offsets: List[ValueRef[str, float]], setOffsets: List[ValueRef[str, float]]):
@@ -124,19 +137,23 @@ class AllInstruction(Instruction):
         self.allControl = StateBool()
 
     def update(self):
+        if not self.initialized:
+            return
         self.offset = mean([o() - (s() - self.setOffset) for o, s in zip(self.offsets, self.setOffsets)])
         
     def compute(self, command: float, enabled: bool):
+        if not self.initialized:
+            return
         self.allControl.state = command != 0 and enabled
         
         if self.allControl.state:
-            self.setOffset = self.offset + sign(command) * FLIPPER_MOVE_OFFSET
+            self.setOffset = self.offset + sign(command) * rev2rad(FLIPPER_MOVE_OFFSET)
             self.hasAction = True
         elif self.allControl.unlatched:
             self.setOffset = self.offset
             self.hasAction = True
         else:
-            self.hasAction = True
+            self.hasAction = False
 
 class ActionsNode(Node):
     def __init__(self):
@@ -187,24 +204,14 @@ class ActionsNode(Node):
         self.flipperMaxSpeed = self.declare_parameter('flippers.max_speed', 50.0)
         self.flipperRatio = self.declare_parameter('flippers.gear_ratio', 540/1)
         
-        # Create subscriptions
-        self.enableSub = self.create_subscription(Bool, 'enable', self.onEnable)
-        self.tracksSub = self.create_subscription(Tracks, 'tracks_cmd', self.onTracks)
-        self.flipperSub = self.create_subscription(Flippers, 'flippers_cmd', self.onFlippers)
-        self.jointStateSub = self.create_subscription(JointState, 'joint_states', self.onJointStates)
-        
-        # Create publishers
-        self.jointTrajectoryPub = self.create_publisher(JointTrajectory, 'trajectory', 1)
-        self.jointJogPub = self.create_publisher(JointJog, 'jog', 1)
-        
         self.posToJoint = {
-            'front_right': self.flipperFrontRight.value,
-            'rear_right': self.flipperRearRight.value,
             'front_left': self.flipperFrontLeft.value,
             'rear_left': self.flipperRearLeft.value,
+            'front_right': self.flipperFrontRight.value,
+            'rear_right': self.flipperRearRight.value,
         }
         
-        self.jointToPos = {pos: joint for joint, pos in self.posToJoint.items()}
+        self.jointToPos = {joint: pos for pos, joint in self.posToJoint.items()}
         
         # Assign flippers
         self.flipperPos = {name: None for name in self.posToJoint.keys()}
@@ -242,6 +249,16 @@ class ActionsNode(Node):
             [ValueRef(self.flipperSetPos, name) for name in self.posToJoint.keys()]
         )
         
+        # Create subscriptions
+        self.enableSub = self.create_subscription(Bool, 'enable', self.onEnable, 1)
+        self.tracksSub = self.create_subscription(Tracks, 'tracks_cmd', self.onTracks, 1)
+        self.flipperSub = self.create_subscription(Flippers, 'flippers_cmd', self.onFlippers, 1)
+        self.jointStateSub = self.create_subscription(JointState, 'joint_states', self.onJointStates, 1)
+        
+        # Create publishers
+        self.jointTrajectoryPub = self.create_publisher(JointTrajectory, 'trajectory', 1)
+        self.jointJogPub = self.create_publisher(JointJog, 'jog', 1)
+        
     def _getHeader(self) -> Header:
         return Header(frame_id=self.get_name(), stamp=self.get_clock().now().to_msg())
         
@@ -262,10 +279,10 @@ class ActionsNode(Node):
             joints.append(name)
             vels.append(clamp(-1, 1, tracksCmd.right) * maxSpeed)
             
-        res.displacements = list([0 for _ in joints])
+        res.displacements = list([0.0 for _ in joints])
         res.joint_names = joints
         res.velocities = vels
-        res.duration = Duration(seconds=1)
+        res.duration = 1.0
         
         self.jointJogPub.publish(res)
     
@@ -300,7 +317,7 @@ class ActionsNode(Node):
                 if 'rear' in name and not rearSelected:
                     singleParams[name] = self.enable
         
-        for name, cmd in commands:
+        for name, cmd in commands.items():
             self.flipperSingleInstructions[name].compute(cmd, singleParams[name])
         
         self.frontPairInstruction.compute(mean([commands['front_left'], commands['front_right']]), self.enable and frontSelected)
@@ -323,6 +340,7 @@ class ActionsNode(Node):
                 (self.frontPairInstruction.setOffset if 'front' in name else self.rearPairInstruction.setOffset) +
                 self.allPairInstruction.setOffset
             )
+            for name in commands.keys()
         }
         
         traj = JointTrajectory(header=self._getHeader())
@@ -355,7 +373,12 @@ class ActionsNode(Node):
                 
         
 def main(args=None):
-    pass
+    rclpy.init(args=args)
+    node = ActionsNode()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        print("Stopped")
 
 if __name__ == '__main__':
     main()

@@ -82,7 +82,7 @@ class ODriveControl(Node):
 
         # Create subscriptions
         self.jointTrajectorySub = self.create_subscription(
-            JointTrajectory, 'trajectory', self.onJointTrajectoryMsg, 5)
+            JointTrajectory, 'trajectory', self.onJointTrajectoryMsg, 1)
         self.jointJogSub = self.create_subscription(
         JointJog, 'jog', self.onJointJogMsg, 5)
         self.enableSub = self.create_subscription(Bool, 'enable', self.onEnableMsg, 1)
@@ -314,7 +314,6 @@ class ODriveControl(Node):
                 await node.read_loop()
         
     async def readLoop(self):
-        # await asyncio.gather(*[self._readLoop(n) for n in self.nodes.values()])
         notifier = can.Notifier(
             self.canHandler,
             [self.reader],
@@ -331,16 +330,16 @@ class ODriveControl(Node):
                 if self.estop:
                     node.call_estop()
                     node.feed_watchdog_msg()
-                    # self.get_logger().info("estop")
                 else:
                     if self.enable:
-                        # node.clear_errors_msg()
                         now = self.get_clock().now()
-                        if self.posActions[name] is not None and (now - self.posActions[name][0] < Duration(seconds=1)):
+                        if self.posActions[name] is not None and (now - self.posActions[name][0] < Duration(nanoseconds=0.5*S_TO_NS)):
+                            node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
                             node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                            node.set_position(*self.posActions[name][1:])
+                            node.set_position(self.posActions[name][1], 0, self.posActions[name][3])
                             
-                        elif self.velActions[name] is not None and (now - self.velActions[name][0] < Duration(seconds=1)):
+                        elif self.velActions[name] is not None and (now - self.velActions[name][0] < Duration(nanoseconds=0.5*S_TO_NS)):
+                            node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_TRAP_TRAJ)
                             node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
                             node.set_velocity(self.velActions[name][1])
                         else:

@@ -107,7 +107,7 @@ class ODriveCanNode:
         self._lastMessage = datetime.now()
         cmd_id = msg.arbitration_id & 0b11111
         if cmd_id == ODriveCommand.GET_ENCODER_ESTIMATES_CMD:
-            self._position, self.velocity = struct.unpack('<ff', msg.data)
+            self.position, self.velocity = struct.unpack('<ff', msg.data)
         elif cmd_id == ODriveCommand.GET_BUS_VOLTAGE_CURRENT_CMD:
             self.voltage, self.current = struct.unpack('<ff', msg.data)
         elif cmd_id == ODriveCommand.GET_TEMPERATURE_CMD:
