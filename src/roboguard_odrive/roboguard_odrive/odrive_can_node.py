@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import can
 import struct
 
-from typing import Any
+from typing import Any, Callable, Optional
 from odrive_types import ODriveAxisState, ODriveCommand, ODriveControlMode, ODriveEndpoints
 from odrive_types import ODriveInputMode, ODriveProcedureResult, ODriveErrorCodes, get_error_description
 import rclpy
@@ -12,19 +12,20 @@ import rclpy.logging
 from can_handler import CanHandler
 
 
-class ODriveCanNode():
-    def __init__(self, handler: CanHandler, node_id: int):
+class ODriveCanNode:
+    def __init__(self, handler: CanHandler, node_id: int, loop: asyncio.AbstractEventLoop, onStatusChangedCb: Optional[Callable]):
         self.handler: CanHandler = handler
         self.node_id: int = node_id
+        self.loop = loop
+        self.onStatusChangedCb = onStatusChangedCb
         self.reader: can.AsyncBufferedReader = can.AsyncBufferedReader()
-        self.connected: bool = False
         self.position = 0.0
         self.velocity = 0.0
         self.torque = 0.0
-        self.error: ODriveErrorCodes = 0
+        self._error: ODriveErrorCodes = 0
         self._lastError: ODriveErrorCodes = 0
         self.disarmReason: ODriveErrorCodes = 0
-        self.state: ODriveAxisState = ODriveAxisState.IDLE
+        self._state: ODriveAxisState = ODriveAxisState.IDLE
         self.current = 0.0
         self.voltage = 0.0
         self.fetTemperature = 0.0
@@ -36,18 +37,58 @@ class ODriveCanNode():
         self._nextPrint = datetime.now()
         self.logger = rclpy.logging.get_logger(
             'odrive_control').get_child(f'ODriveCanNode{self.node_id}')
+        self._recursive = False
+        self._lastMessage = datetime.min
+
+    @property
+    def connected(self) -> bool:
+        return (datetime.now() - self._lastMessage).total_seconds() <= 1
+
+    def onStatusChanged(self):
+        recursing = self._recursive
+        self._recursive = True
+        if not recursing:
+            if self.onStatusChangedCb is not None:
+                self.onStatusChangedCb()
+        
+    @property
+    def error(self) -> ODriveErrorCodes:
+        return self._error
+    
+    @error.setter
+    def error(self, error: ODriveErrorCodes):
+        lastError = self.error
+        self._error = error
+        if self._error != lastError:
+            self.onStatusChanged()
+
+    @property
+    def state(self) -> ODriveAxisState:
+        return self._state
+    
+    @state.setter
+    def state(self, state: ODriveAxisState):
+        lastState = self._state
+        self._state = state
+        if self._state != lastState:
+            self.onStatusChanged()
 
     @property
     def bus(self) -> can.BusABC:
-        return self.handler.bus
+        return self.handler
 
-    def __enter__(self) -> ODriveCanNode:
+    async def __aenter__(self) -> ODriveCanNode:
+        while self.bus is None:
+            self.logger.error("Bus closed retrying in 1 second")
+            await asyncio.sleep(1)
         self.notifier = can.Notifier(
-            self.bus, [self.reader], loop=asyncio.get_running_loop()
+            self.bus,
+            [self.reader],
+            loop=self.loop
         )
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.notifier.stop()
 
     def flush_rx(self) -> None:
@@ -57,11 +98,13 @@ class ODriveCanNode():
     async def read_loop(self):
         async for msg in self.reader:
             self.read_msg(msg)
+        self.logger.error("Exitted read_loop")
 
     def read_msg(self, msg: can.Message):
         nid = ((msg.arbitration_id & (0b11111 << 5)) >> 5)
         if nid != self.node_id:
             return
+        self._lastMessage = datetime.now()
         cmd_id = msg.arbitration_id & 0b11111
         if cmd_id == ODriveCommand.GET_ENCODER_ESTIMATES_CMD:
             self._position, self.velocity = struct.unpack('<ff', msg.data)
@@ -85,7 +128,6 @@ class ODriveCanNode():
             self.state = ODriveAxisState(state)
             self.procedureDone = procedureDone != 0
             self.trajectoryDone = trajectoryDone != 0
-        self.connected = True
 
     def clear_errors_msg(self, identify: bool = False) -> None:
         data = b'\x01' if identify else b'\x00'
@@ -120,7 +162,6 @@ class ODriveCanNode():
             data=payload,
             is_extended_id=False
         ))
-        # self.connected = False
 
     def set_controller_mode(self, controlMode: ODriveControlMode, inputMode: ODriveInputMode):
         payload = struct.pack('<II', controlMode, inputMode)
@@ -140,12 +181,17 @@ class ODriveCanNode():
             is_extended_id=False
         ))
 
+    def feed_watchdog_msg(self):
+        self._rxsdo(True, ODriveEndpoints.AXIS_WATCHDOG_FEED, '')
+
     def set_inertia(self, inertia: float):
-        self._rxsdo(True, ODriveEndpoints.CONFIG_INERTIA, 'f', inertia)
+        # self._rxsdo(True, ODriveEndpoints.CONFIG_INERTIA, 'f', inertia)
+        raise NotImplementedError()
 
     def set_input_filter_bandwidth(self, bandwidth: float):
-        self._rxsdo(
-            True, ODriveEndpoints.CONFIG_INPUT_FILTER_BANDWIDTH, 'f', bandwidth)
+        # self._rxsdo(
+        #     True, ODriveEndpoints.CONFIG_INPUT_FILTER_BANDWIDTH, 'f', bandwidth)
+        raise NotImplementedError()
 
     def set_velocity(self, vel: float) -> None:
         payload = struct.pack('<ff', vel, 0.0)

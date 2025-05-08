@@ -65,12 +65,7 @@ class ODriveInputMode(IntEnum):
 
 
 class ODriveEndpoints(IntEnum):
-    CONFIG_INERTIA = 413  # float
-    CONFIG_INPUT_FILTER_BANDWIDTH = 414  # float
-    TRAP_TRAJ_VEL_LIMIT = 429  # float
-    TRAP_TRAJ_ACCEL_LIMIT = 430  # float
-    TRAP_TRAJ_DECEL_LIMIT = 431  # float
-
+    AXIS_WATCHDOG_FEED = 603 # func() -> None
 
 class ODriveProcedureResult(IntEnum):
     SUCCESS = 0

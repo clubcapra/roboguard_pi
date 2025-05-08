@@ -65,7 +65,10 @@ class ODrivePub(Node):
         )
         self.i = (self.i + 1) % self.cycle
         
-if __name__ == "__main__":
+def main(args=None):
     rclpy.init()
     node = ODrivePub()
     rclpy.spin(node)
+        
+if __name__ == "__main__":
+    main()

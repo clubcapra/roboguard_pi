@@ -14,8 +14,10 @@ setup(
         ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
         ('share/' + package_name + '/config', glob('config/*.yaml')),
     ],
-    install_requires=['setuptools', 'python_can'],
-    requires=['python_can'],
+    install_requires=[
+        'setuptools',
+        'python-can',
+    ],
     zip_safe=True,
     maintainer='Capra',
     maintainer_email='capra@ens.etsmtl.ca',
@@ -25,6 +27,7 @@ setup(
     entry_points={
         'console_scripts': [
             'odrive_control = roboguard_odrive.odrive_control:main',
+            'test_control_node = roboguard_odrive.test_control_node:main',
         ],
     },
 )

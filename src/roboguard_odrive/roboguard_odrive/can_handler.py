@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from enum import IntEnum
+import os
 from types import TracebackType
 from typing import Any, Callable, Optional, Sequence, Tuple, Type, TypeVar, Union
 import can
 from rclpy.impl.rcutils_logger import RcutilsLogger
-
+can.interfaces
 
 class CanStatus(IntEnum):
     UNINITIALIZED = 0
@@ -57,12 +58,17 @@ class CanHandler(can.BusABC):
         self.errorCallback = errorCallback
         self.channel = channel
         self.bitrate = bitrate
+        self.nextErrorRetry = datetime.now()
+        self.errorCount = 0
+        self._maxErrors = 3
+        self._recursion = False
 
     @property
     def _is_shutdown(self) -> bool:
-        if self.bus is None:
-            return True
-        return self.bus._is_shutdown
+        # if self.bus is None:
+        #     return True
+        # return self.bus._is_shutdown
+        return False
 
     @property
     def error(self) -> CanError:
@@ -71,33 +77,64 @@ class CanHandler(can.BusABC):
     @error.setter
     def error(self, error: CanError):
         self._error = error
-        # if self.errorCallback is not None:
-        #     self.errorCallback(error)
+        
+    def restartCan(self):
+        self.logger.info(f'Restarting {self.channel}')
+        os.popen(f'sudo ip link set down {self.channel}; sudo ip link set {self.channel} type can bitrate {self.bitrate}; sudo ifconfig {self.channel} txqueuelen 1000; sudo ip link set up {self.channel}', 'w')
+        self.logger.info('Done')
+
+    def incrErrorCount(self):
+        now = datetime.now()
+        if self.nextErrorRetry <= now:
+            self.nextErrorRetry = now + timedelta(seconds=1.0)
+            self.errorCount += 1
+            
+            if self.errorCount >= self._maxErrors:
+                self.restartCan()
 
     def _try(self, func: _Func, *args, **kwargs) -> Any:
+        recursing = self._recursion
+        self._recursion = True
+        lastError = self.error
+        
         try:
-            return func(*args, **kwargs)
+            res = func(*args, **kwargs)
+            self.errorCount = 0
+            self.error = CanError.NONE
+            return res
         except can.exceptions.CanInterfaceNotImplementedError as e:
-            self.logger.fatal(f"SometCanErrorCallbackhing is very wrong: {e}")
-            self.logger.info("Restarting can bus in 5 sec")
+            self.logger.fatal(f"Something is very wrong: {e}")
+            self.logger.info("Restarting can bus in 1 sec")
             self.nextRetry = datetime.now() + timedelta(seconds=5)
             self.error = CanError.FATAL_ERROR
+            self.incrErrorCount()
             return None
         except can.exceptions.CanInitializationError as e:
             self.logger.error(f"Initializing failed: {e}")
-            self.logger.info("Restarting can bus in 5 sec")
+            self.logger.info("Restarting can bus in 1 sec")
             self.nextRetry = datetime.now() + timedelta(seconds=5)
             self.error = CanError.INIT_ERROR
+            self.incrErrorCount()
             return None
         except can.exceptions.CanOperationError as e:
+            if 'Transmit buffer full' in str(e):
+                self.errorCount = self._maxErrors
             self.logger.error(f"Operation failed: {e}")
-            self.logger.info("Restarting can bus in 5 sec")
+            self.logger.info("Restarting can bus in 1 sec")
             self.nextRetry = datetime.now() + timedelta(seconds=5)
             self.error = CanError.OPERATION_ERROR
+            self.incrErrorCount()
             return None
         except can.exceptions.CanTimeoutError as e:
             self.logger.warning(f"Timed out: {e}")
+            self.incrErrorCount()
             return None
+        finally:
+            if not recursing:
+                if self.errorCallback is not None and self.error != lastError:
+                    self.errorCallback(self.error)
+                self._recursion = False
+            
 
     @property
     def status(self) -> CanStatus:
