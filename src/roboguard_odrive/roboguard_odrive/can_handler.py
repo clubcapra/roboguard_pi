@@ -49,14 +49,20 @@ class CanHandler(can.BusABC):
         bitrate: int = 500000,
         errorCallback: Optional[CanErrorCallback] = None
     ):
+        self._error = CanError.NONE
+        self.nextRetry = datetime.now()
+        self._bus: Optional[can.BusABC] = None
+        self._shutdown = False
+        self.logger = logger.get_child("CanHandler")
+        self.errorCallback = errorCallback
         self.channel = channel
         self.bitrate = bitrate
-        self._bus: Optional[can.BusABC] = None
-        self.logger = logger.get_child("CanHandler")
-        self.nextRetry = datetime.now()
-        self._shutdown = False
-        self._error = CanError.NONE
-        self.errorCallback = errorCallback
+
+    @property
+    def _is_shutdown(self) -> bool:
+        if self.bus is None:
+            return True
+        return self.bus._is_shutdown
 
     @property
     def error(self) -> CanError:
@@ -65,9 +71,8 @@ class CanHandler(can.BusABC):
     @error.setter
     def error(self, error: CanError):
         self._error = error
-        if self.errorCallback is not None:
-            self.errorCallback(error)
-        return self._error
+        # if self.errorCallback is not None:
+        #     self.errorCallback(error)
 
     def _try(self, func: _Func, *args, **kwargs) -> Any:
         try:
@@ -220,12 +225,12 @@ class CanHandler(can.BusABC):
 
     def __del__(self) -> None:
         if self.bus is not None:
-            self._try(self.__del__)
+            self._try(self.bus.__del__)
 
     @property
     def state(self) -> can.BusState:
         if self.bus is not None:
-            return self.state
+            return self.bus.state
         return can.BusState.ACTIVE
 
     @state.setter

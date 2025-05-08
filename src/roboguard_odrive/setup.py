@@ -12,18 +12,19 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch', glob('launch/*.launch.py')),
+        ('share/' + package_name + '/config', glob('config/*.yaml')),
     ],
     install_requires=['setuptools', 'python_can'],
-    requires=['python-can'],
+    requires=['python_can'],
     zip_safe=True,
     maintainer='Capra',
     maintainer_email='capra@ens.etsmtl.ca',
-    description='ODrive control node',
+    description='Low level control of ODrives',
     license='MIT',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'odrive_can_node = roboguard_odrive.odrive_can_node:main',
+            'odrive_control = roboguard_odrive.odrive_control:main',
         ],
     },
 )

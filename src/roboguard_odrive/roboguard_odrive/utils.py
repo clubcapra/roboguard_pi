@@ -21,3 +21,9 @@ def dict2keyvalues(values: Dict[str, str]) -> List[KeyValue]:
 
 def yesno(value: bool) -> str:
     return 'yes' if value else 'no'
+
+def bounce(minValue: float, maxValue: float, fac: float) -> float:
+    m = fac % 1
+    f = 1 - (abs(m - 0.5) * 2.0)
+    return minValue + (maxValue - minValue) * f
+    

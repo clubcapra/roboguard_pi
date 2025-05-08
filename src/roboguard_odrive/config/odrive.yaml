@@ -1,0 +1,28 @@
+odrive_control:
+  ros__parameters:
+    channel: "can0"
+    bitrate: 500000
+
+    joint_names: [
+      "flipper_fl_j",
+      "flipper_rl_j",
+      "flipper_fr_j",
+      "flipper_rr_j",
+      "track_fl_j",
+      "track_rl_j",
+      "track_fr_j",
+      "track_rr_j",
+    ]
+    joint_can_ids: [
+      11,
+      12,
+      13,
+      14,
+      21,
+      22,
+      23,
+      24,
+    ]
+
+    publish_rate: 20.0
+    can_write_rate: 10.0

@@ -31,6 +31,7 @@ class ODriveCanNode():
         self.motorTemperature = 0.0
         self.procedureResult: ODriveProcedureResult = ODriveProcedureResult.SUCCESS
         self.trajectoryDone = False
+        self.procedureDone = False
         self._setpoint = 0.0
         self._nextPrint = datetime.now()
         self.logger = rclpy.logging.get_logger(
@@ -72,12 +73,19 @@ class ODriveCanNode():
         elif cmd_id == ODriveCommand.GET_TORQUES_CMD:
             _, self.torque = struct.unpack('<ff', msg.data)
         elif cmd_id == ODriveCommand.GET_ERROR_CMD:
-            self.error, self.disarmReason = struct.unpack('<II', msg.data)
+            error, disarmReason = struct.unpack('<II', msg.data)
+            self.error = ODriveErrorCodes(error)
+            self.disarmReason = ODriveErrorCodes(disarmReason)
             if self.error != 0:
                 self.getErrorDescription(self.error)
         elif cmd_id == ODriveCommand.HEARTBEAT_CMD:
-            self.error, self.state, self.procedureDone, self.trajectoryDone = struct.unpack(
+            error, state, procedureDone, trajectoryDone = struct.unpack(
                 '<IBBBx', msg.data)
+            self.error = ODriveErrorCodes(error)
+            self.state = ODriveAxisState(state)
+            self.procedureDone = procedureDone != 0
+            self.trajectoryDone = trajectoryDone != 0
+        self.connected = True
 
     def clear_errors_msg(self, identify: bool = False) -> None:
         data = b'\x01' if identify else b'\x00'
@@ -112,7 +120,7 @@ class ODriveCanNode():
             data=payload,
             is_extended_id=False
         ))
-        self.connected = False
+        # self.connected = False
 
     def set_controller_mode(self, controlMode: ODriveControlMode, inputMode: ODriveInputMode):
         payload = struct.pack('<II', controlMode, inputMode)
