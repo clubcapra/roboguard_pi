@@ -62,6 +62,7 @@ class CanHandler(can.BusABC):
         self.errorCount = 0
         self._maxErrors = 3
         self._recursion = False
+        self._lastCanRestart = datetime.now()
 
     @property
     def _is_shutdown(self) -> bool:
@@ -79,8 +80,12 @@ class CanHandler(can.BusABC):
         self._error = error
         
     def restartCan(self):
+        now = datetime.now()
+        if self._lastCanRestart + timedelta(seconds=3) > now:
+            return
         self.logger.info(f'Restarting {self.channel}')
         os.popen(f'sudo ip link set down {self.channel}; sudo ip link set {self.channel} type can bitrate {self.bitrate}; sudo ifconfig {self.channel} txqueuelen 1000; sudo ip link set up {self.channel}', 'w')
+        self._lastCanRestart = now
         self.logger.info('Done')
 
     def incrErrorCount(self):

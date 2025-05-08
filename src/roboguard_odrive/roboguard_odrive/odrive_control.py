@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+from statistics import covariance, mean, median
+import statistics
 import sys
 sys.path.append(__file__.removesuffix(f"/{__file__.split('/')[-1]}"))
 
@@ -30,7 +33,38 @@ from can_handler import CanError, CanHandler, CanStatus
 from odrive_can_node import ODriveCanNode
 from utils import dict2keyvalues, rad2rev, rev2rad, verifyLengthMatch, yesno
 
+class RollingBuffer:
+    def __init__(self, capacity:int):
+        self.capacity = capacity
+        self._len = 0
+        self.reset()
+        self._index = 0
+        
+    def reset(self):
+        self._data = list([0.0 for _ in range(self.capacity)])
+        
+    def push(self, value: float):
+        self._data[self._index] = value
+        self._len = max(self._index + 1, self._len)
+        self._index = (self._index + 1) % self.capacity
+        
+    def mean(self) -> float:
+        return mean(self._data[:self._len])
+    
+    def min(self) -> float:
+        return min(self._data[:self._len])
+    
+    def max(self) -> float:
+        return max(self._data[:self._len])
+    
+    def median(self) -> float:
+        return median(self._data[:self._len])
+    
+    def variance(self) -> float:
+        return statistics.variance(self._data[:self._len])
 
+def niceFloat(value: float, numDigits: int = 3, just:int = 6) -> str:
+    return str(round(value, numDigits)).ljust(just)
 
 class ODriveControl(Node):
     def __init__(self, loop: asyncio.AbstractEventLoop):
@@ -113,6 +147,7 @@ class ODriveControl(Node):
         
         self.posActions: Dict[str, Optional[Tuple[Time, float, float, float]]] = {name: None for name in self.nodes.keys()}
         self.velActions: Dict[str, Optional[Tuple[Time, float]]] = {name: None for name in self.nodes.keys()}
+        self.writeLoopStats = RollingBuffer(100)
         
     @property
     def enable(self) -> bool:
@@ -228,6 +263,32 @@ class ODriveControl(Node):
         res.values = dict2keyvalues(values)
         return res
 
+    def writeLoopDiagnostic(self) -> DiagnosticStatus:
+        res = DiagnosticStatus()
+        res.hardware_id = 'write_loop'
+        res.name = 'Write loop stats'
+        errorThresh = 2 * (1 / self.canWriteRate.value)
+        warnThresh = 1 / self.canWriteRate.value
+        
+        if self.writeLoopStats.max() > errorThresh:
+            res.level = DiagnosticStatus.ERROR
+        elif self.writeLoopStats.max() > warnThresh:
+            res.level = DiagnosticStatus.WARN
+        else:
+            res.level = DiagnosticStatus.OK
+            
+        values = {
+            'avg': self.writeLoopStats.mean(),
+            'min': self.writeLoopStats.min(),
+            'max': self.writeLoopStats.max(),
+            'median': self.writeLoopStats.mean(),
+            'var': self.writeLoopStats.variance(),
+        }
+        
+        res.message = ' '.join([f'{name}: {niceFloat(value)}' for name, value in values.items()])
+        res.values = dict2keyvalues({k: str(v) for k, v in values.items()})
+        return res
+
     def _driveErrorMessage(self, node: ODriveCanNode) -> DiagnosticStatus:
         if not node.connected:
             return DiagnosticStatus(
@@ -243,7 +304,7 @@ class ODriveControl(Node):
             level=DiagnosticStatus.OK,
             message=node.state.name
         )
-
+    
     def odriveNodeDiagnostic(self) -> Iterable[DiagnosticArray]:
         for name, node in self.nodes.items():
             res: DiagnosticStatus = self._driveErrorMessage(node)
@@ -252,6 +313,9 @@ class ODriveControl(Node):
 
             values: Dict[str, str] = {
                 'connected': yesno(node.connected),
+                'state': node.state.name,
+                'error': get_error_description(node.error),
+                'disarm_reason': get_error_description(node.disarmReason),
                 'position': f'{round(node.position, 3)} rev',
                 'velocity': f'{round(node.velocity, 3)} rev/s',
                 'effort': f'{round(node.torque, 3)} Nm',
@@ -259,7 +323,6 @@ class ODriveControl(Node):
                 'current': f'{round(node.current, 3)} A',
                 'fet_temperature': f'{round(node.fetTemperature, 3)} °C',
                 'motor_temperature': f'{round(node.motorTemperature, 3)} °C',
-                'disarm_reason': get_error_description(node.disarmReason),
                 'trajectory_done': yesno(node.trajectoryDone),
                 'procedure_result': node.procedureResult.name,
                 'procedure_done': yesno(node.procedureDone),
@@ -281,7 +344,8 @@ class ODriveControl(Node):
     def sendDiagnostics(self):
         status: List[DiagnosticStatus] = [
             self.canDiagnostic(),
-            *self.odriveNodeDiagnostic()
+            self.writeLoopDiagnostic(),
+            *self.odriveNodeDiagnostic(),
         ]
         diagnostics = DiagnosticArray(header=self._getHeader(), status=status)
         self.diagnosticsPub.publish(diagnostics)
@@ -325,35 +389,69 @@ class ODriveControl(Node):
         notifier.stop()
     
     async def writeLoop(self):
+        posTimedOut = {name: True for name in self.nodes.keys()}
+        velTimedOut = {name: True for name in self.nodes.keys()}
+        lastOkTime = {name: datetime.now() for name in self.nodes.keys()}
+        nextRun = datetime.now() + timedelta(seconds=1/self.canWriteRate.value)
+        
         while True:
-            for name, node in self.nodes.items():
-                if self.estop:
-                    node.call_estop()
-                    node.feed_watchdog_msg()
-                else:
-                    if self.enable:
-                        now = self.get_clock().now()
-                        if self.posActions[name] is not None and (now - self.posActions[name][0] < Duration(nanoseconds=0.5*S_TO_NS)):
-                            if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
-                                node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
-                                node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                            node.set_position(self.posActions[name][1], 0, self.posActions[name][3])
-                            
-                        elif self.velActions[name] is not None and (now - self.velActions[name][0] < Duration(nanoseconds=0.5*S_TO_NS)):
-                            if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
-                                node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
-                                node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                            node.set_velocity(self.velActions[name][1])
+            try:
+                startTime = datetime.now()
+                for name, node in self.nodes.items():
+                    if node.error != 0:
+                        self.get_logger().info(f"Node: {name} {node.error.name}")
+                        if lastOkTime[name] + timedelta(seconds=3) > startTime:
+                            self.canHandler.restartCan()
+                        node.clear_errors_msg()
+                    else:
+                        lastOkTime[name] = startTime
+                    if self.estop:
+                        node.call_estop()
+                        node.feed_watchdog_msg()
+                    else:
+                        if self.enable:
+                            now = self.get_clock().now()
+                            posTO = False if self.posActions[name] is None else (now - self.posActions[name][0] > Duration(nanoseconds=0.5*S_TO_NS))
+                            velTO = False if self.velActions[name] is None else (now - self.velActions[name][0] > Duration(nanoseconds=0.5*S_TO_NS))
+                            if posTO and not posTimedOut[name]:
+                                self.get_logger().warn(f"Node: {name} timed out pos")
+                            if velTO and not velTimedOut[name]:
+                                self.get_logger().warn(f"Node: {name} timed out vel")
+                            posTimedOut[name] = posTO
+                            velTimedOut[name] = velTO
+                            if self.posActions[name] is not None and not posTO:
+                                if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                    node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
+                                    node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
+                                node.set_position(self.posActions[name][1], 0, self.posActions[name][3])
+                                
+                            elif self.velActions[name] is not None and not velTO:
+                                if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                    node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
+                                    node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
+                                node.set_velocity(self.velActions[name][1])
+                            else:
+                                if node.state != ODriveAxisState.IDLE:
+                                    node.set_state_msg(ODriveAxisState.IDLE)
+                                node.feed_watchdog_msg()
                         else:
                             if node.state != ODriveAxisState.IDLE:
                                 node.set_state_msg(ODriveAxisState.IDLE)
                             node.feed_watchdog_msg()
-                    else:
-                        if node.state != ODriveAxisState.IDLE:
-                            node.set_state_msg(ODriveAxisState.IDLE)
-                        node.feed_watchdog_msg()
-            await asyncio.sleep(1.0/self.canWriteRate.value)
-                    
+                newNow = datetime.now()
+                runtime = newNow - startTime
+                self.writeLoopStats.push(runtime.total_seconds())
+                if newNow >= nextRun:
+                    self.get_logger().warning(f"Write loop is behind schedule by {round((nextRun - newNow).total_seconds(), 4)}s")
+                    nextRun = newNow + timedelta(seconds=1/self.canWriteRate.value)
+                else:
+                    delay = nextRun - newNow
+                    nextRun = nextRun + timedelta(seconds=1/self.canWriteRate.value)
+                    await asyncio.sleep(delay.total_seconds())
+            except asyncio.CancelledError:
+                return
+            except Exception as e:
+                self.get_logger().error(f"Loop error: {e}")
 
     def stop(self):
         self.get_logger().info("Shutting down")

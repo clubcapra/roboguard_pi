@@ -152,7 +152,7 @@ class ODriveCanNode:
             self.logger.error(desc)
             self._nextPrint = now + timedelta(seconds=1)
         self._lastError = self.error
-        self.clear_errors_msg()
+        # self.clear_errors_msg()
 
     def set_state_msg(self, state: ODriveAxisState):
         payload = struct.pack('<I', state)
