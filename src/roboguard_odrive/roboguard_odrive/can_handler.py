@@ -21,9 +21,9 @@ class CanError(IntEnum):
     TIMEOUT = 4
 
 
-_Func = TypeVar('_Func', Callable)
+_Func = TypeVar('_Func', bound=Callable)
 
-CanErrorCallback = Callable[[CanError]]
+CanErrorCallback = Callable[[CanError], None]
 
 
 class EmptyCyclicSendTask(can.CyclicSendTaskABC):

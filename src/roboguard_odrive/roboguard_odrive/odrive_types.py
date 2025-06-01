@@ -1,12 +1,11 @@
 from enum import IntEnum, IntFlag
-
-from sympy import Dict
+from typing import Dict
 
 # Non exhaustive list of odrive codes
 
+
+
 # odrive commands
-
-
 class ODriveCommand(IntEnum):
     GET_VERSION_CMD = 0x00
     HEARTBEAT_CMD = 0x01
@@ -35,17 +34,17 @@ class ODriveRebootAction(IntEnum):
     REBOOT_ACTION_ERASE = 2
 
 # odrive axis state
-
-
 class ODriveAxisState(IntEnum):
     UNDEFINED = 0
     IDLE = 1
-    CALIBRATION = 3
+    STARTUP_SEQUENCE = 2
+    FULL_CALIBRATION_SEQUENCE = 3
+    MOTOR_CALIBRATION = 4
+    ENCODER_INDEX_SEARCH = 6
+    ENCODER_OFFSET_CALIBRATION = 7
     CLOSED_LOOP_CONTROL = 8
 
 # odrive control mode
-
-
 class ODriveControlMode(IntEnum):
     MODE_VOLTAGE_CONTROL = 0
     MODE_TORQUE_CONTROL = 1
@@ -53,8 +52,6 @@ class ODriveControlMode(IntEnum):
     MODE_POSITION_CONTROL = 3
 
 # odrive input mode
-
-
 class ODriveInputMode(IntEnum):
     INPUT_INACTIVE = 0
     INPUT_PASSTHROUGH = 1
@@ -63,6 +60,8 @@ class ODriveInputMode(IntEnum):
     INPUT_MIX_CHANNELS = 4
     INPUT_TRAP_TRAJ = 5
     INPUT_TORQUE_RAMP = 6
+    INPUT_MIRROR = 7
+    INPUT_TUNING = 8
 
 
 class ODriveEndpoints(IntEnum):

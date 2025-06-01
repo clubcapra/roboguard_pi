@@ -2,9 +2,12 @@ from __future__ import annotations
 
 # std imports
 import asyncio
+import os
 from typing import Dict, Iterable, List
 
+# 3rd party imports
 import can
+from elevate import elevate
 
 # ros imports
 import rclpy
@@ -27,6 +30,7 @@ from odrive_can_node import ODriveCanNode
 from utils import dict2keyvalues, rad2rev, rev2rad, verifyLengthMatch, yesno
 
 
+
 class ODriveControl(Node):
     def __init__(self):
         from rcl_interfaces.msg import ParameterDescriptor, ParameterType
@@ -41,17 +45,18 @@ class ODriveControl(Node):
         
         # Declare parameters
         self.channel = self.declare_parameter(
-            'channel', 'can0', ParameterDescriptor(description='Can channel'))
+            'channel', 'can0', ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Can channel'))
         self.bitrate = self.declare_parameter(
-            'bitrate', 500000, ParameterDescriptor(description='Can bitrate'))
+            'bitrate', 500000, ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Can bitrate'))
 
         self.jointNames = self.declare_parameter(
             'joint_names', [], ParameterDescriptor(type=ParameterType.PARAMETER_STRING_ARRAY))
         self.jointCanIDs = self.declare_parameter(
             'joint_can_ids', [], ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER_ARRAY))
-        self.frequency: rclpy.Parameter = self.declare_parameter(
-            'publish_rate', 20.0, ParameterDescriptor(description='Publish rate in Hz'),
-            type=ParameterType.PARAMETER_DOUBLE)
+        self.publishRate: rclpy.Parameter = self.declare_parameter(
+            'publish_rate', 20.0, ParameterDescriptor(type=ParameterType.PARAMETER_DOUBLE, description='Publish rate in Hz'))
+        self.canWriteRate: rclpy.Parameter = self.declare_parameter(
+            'can_write_rate', 10.0, ParameterDescriptor(type=ParameterType.PARAMETER_DOUBLE, description='Can write rate in Hz'))
 
         # Create subscriptions
         self.jointTrajectorySub = self.create_subscription(
@@ -69,7 +74,7 @@ class ODriveControl(Node):
 
         # Create timers
         self.publishTimer = self.create_timer(
-            1.0 / self.frequency.value, self.onPublishTimer)
+            1.0 / self.publishRate.value, self.onPublishTimer)
         self.diagnosticTimer = self.create_timer(1.0, self.onDiagnosticTimer)
         self.readTimer = self.create_timer(0.01, self.onReadTimer)
         
@@ -288,6 +293,7 @@ class ODriveControl(Node):
                         
                     else:
                         node.set_state_msg(ODriveAxisState.IDLE)
+            await asyncio.sleep(1.0/self.canWriteRate.value)
                     
 
     async def onExit(self):
@@ -334,6 +340,9 @@ def main(args=None):
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
 
+def is_root():
+    return os.getuid() == 0
 
 if __name__ == '__main__':
     main()
+    
