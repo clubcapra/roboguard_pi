@@ -204,6 +204,7 @@ class CanHandler(can.BusABC):
             return
         self._bus.shutdown()
         self._bus = None
+        self.logger.info("Can bus shutdown")
 
     def __enter__(self):
         self.start()

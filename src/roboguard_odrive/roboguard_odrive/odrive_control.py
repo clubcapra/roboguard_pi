@@ -4,30 +4,41 @@ from __future__ import annotations
 import asyncio
 from typing import Dict, Iterable, List
 
+import can
+
 # ros imports
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
+from rclpy.constants import S_TO_NS
+from rclpy.duration import Duration
 
 # messages and services imports
-from odrive_types import get_error_description
+from odrive_types import ODriveAxisState, ODriveControlMode, ODriveInputMode, get_error_description
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Bool
 
 # local imports
 from can_handler import CanError, CanHandler, CanStatus
 from odrive_can_node import ODriveCanNode
-from utils import dict2keyvalues, rad2rev, verifyLengthMatch, yesno
+from utils import dict2keyvalues, rad2rev, rev2rad, verifyLengthMatch, yesno
 
 
 class ODriveControl(Node):
     def __init__(self):
         from rcl_interfaces.msg import ParameterDescriptor, ParameterType
         super().__init__('odrive_control')
-
+        
+        # Declare variables
+        self.shuttingDown = False
+        self._lastEnable = self.get_clock().now()
+        self._enable = False
+        self._lastEStop = self.get_clock().now()
+        self._estop = True
+        
         # Declare parameters
         self.channel = self.declare_parameter(
             'channel', 'can0', ParameterDescriptor(description='Can channel'))
@@ -46,7 +57,9 @@ class ODriveControl(Node):
         self.jointTrajectorySub = self.create_subscription(
             JointTrajectory, 'trajectory', self.onJointTrajectoryMsg, 1)
         self.jointJogSub = self.create_subscription(
-            JointJog, 'jog', self.onJointJogMsg, 1)
+        JointJog, 'jog', self.onJointJogMsg, 1)
+        self.enableSub = self.create_subscription(Bool, 'enable', self.onEnableMsg, 1)
+        self.estopSub = self.create_subscription(Bool, 'estop', self.onEStopMsg, 1)
 
         # Create publishers
         self.jointStatePub = self.create_publisher(
@@ -54,19 +67,57 @@ class ODriveControl(Node):
         self.diagnosticsPub = self.create_publisher(
             DiagnosticArray, 'diagnostics', 1)
 
-        # Create timer
+        # Create timers
         self.publishTimer = self.create_timer(
             1.0 / self.frequency.value, self.onPublishTimer)
         self.diagnosticTimer = self.create_timer(1.0, self.onDiagnosticTimer)
+        self.readTimer = self.create_timer(0.01, self.onReadTimer)
+        
+        # Release resources on exit
+        self.create_guard_condition(self.onExit)
 
         # Setup can nodes
         self.canHandler = CanHandler(self.channel.value, self.bitrate.value)
+        self.reader = can.AsyncBufferedReader()
+        self.notifier = can.Notifier(self.canHandler, [
+            self.reader
+        ], 0.005)
         self.nodes: Dict[str, ODriveCanNode] = {
             name: ODriveCanNode(self.canHandler, nodeID)
                 for name, nodeID in zip(self.jointNames.value, self.jointCanIDs.value)
         }
+        self.readTask = self.executor.create_task(self.readLoop())
+        self.writeTask = self.executor.create_task(self.writeLoop())
+        
+    @property
+    def enable(self) -> bool:
+        if self.shuttingDown or self.estop:
+            return False
+        now = self.get_clock().now()
+        if now - self._lastEnable > Duration(nanoseconds=int(0.5 * S_TO_NS)):
+            return False
+        return self._enable
+    
+    @enable.setter
+    def enable(self, value: bool):
+        self._lastEnable = self.get_clock().now()
+        self._enable = value
+    
+    @property
+    def estop(self) -> bool:
+        if self.shuttingDown:
+            return True
+        now = self.get_clock().now()
+        if now - self._lastEStop > Duration(nanoseconds=int(0.5 * S_TO_NS)):
+            return True
+        return self._estop
+    
+    @estop.setter
+    def estop(self, value: bool):
+        self._lastEStop = self.get_clock().now()
+        self._estop = value
 
-    async def onJointTrajectoryMsg(self, trajectory: JointTrajectory):
+    def onJointTrajectoryMsg(self, trajectory: JointTrajectory):
         # Position control
         if len(trajectory.points) == 0:
             self.get_logger().warning('Invalid trajectory, size 0')
@@ -83,9 +134,10 @@ class ODriveControl(Node):
         ):
             position = rad2rev(position)
             velocity = rad2rev(velocity)
+            self.nodes[name].set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
             self.nodes[name].set_position(position, velocity, effort)
 
-    async def onJointJogMsg(self, jog: JointJog) -> ODriveControl:
+    def onJointJogMsg(self, jog: JointJog):
         # Velocity control
         if len(jog.joint_names) == 0:
             self.get_logger().warning('Invalid jog, size 0')
@@ -97,7 +149,14 @@ class ODriveControl(Node):
         for name, velocity in zip(jog.joint_names, jog.velocities):
             velocity = rad2rev(velocity)
 
+            self.nodes[name].set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
             self.nodes[name].set_velocity(velocity)
+
+    def onEnableMsg(self, enable: Bool):
+        self.enable = enable
+        
+    def onEStopMsg(self, estop: Bool):
+        self.estop = estop
 
     def canDiagnostic(self) -> DiagnosticStatus:
         res = DiagnosticStatus()
@@ -199,22 +258,56 @@ class ODriveControl(Node):
         diagnostics = DiagnosticArray(header=self._getHeader(), status=status)
         self.diagnosticsPub.publish(diagnostics)
 
-    async def onPublishTimer(self):
-        pass
+    def onPublishTimer(self):
+        for name, node in self.nodes.items():
+            state = JointState(
+                header=self._getHeader(),
+                name=name,
+                position=rev2rad(node.position),
+                veloocity=rev2rad(node.velocity),
+                effort=node.torque
+            )
+            self.jointStatePub.publish(state)
 
-    async def onDiagnosticTimer(self):
+    def onDiagnosticTimer(self):
         self.sendDiagnostics()
+        
+    async def readLoop(self):
+        async for msg in self.reader:
+            for node in self.nodes.values():
+                node.read_msg(msg)
+                
+    async def writeLoop(self):
+        while True:
+            for node in self.nodes.values():
+                if self.estop:
+                    node.call_estop()
+                else:
+                    if self.enable:
+                        node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
+                        
+                    else:
+                        node.set_state_msg(ODriveAxisState.IDLE)
+                    
 
-    def __enter__(self) -> ODriveControl:
-        for n in self.nodes.values():
-            n.__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for n in self.nodes.values():
-            n.__exit__(exc_type, exc_val, exc_tb)
+    async def onExit(self):
+        self.get_logger().info("Shutting down")
+        self.shuttingDown = True
+        self.estop = True
+        self.enable = False
+        self.get_logger().info("Calling EStop")
+        
+        for node in self.nodes.values():
+            node.call_estop()
+        await asyncio.sleep(0.1)
+        self.get_logger().info("Stopping tasks")
+        self.writeTask.cancel()
+        self.readTask.cancel()
+        while self.readTask.executing() or self.writeTask.executing():
+            await asyncio.sleep(0.1)
+        self.get_logger().info("Tasks stopped")
         self.canHandler.shutdown()
-
+        self.get_logger().info("Stopped successfully")
 
 async def spinning(node):
     while rclpy.ok():
