@@ -16,6 +16,7 @@ def generate_launch_description():
     # Get the launch directory
     pkg_roboguard_odrive = get_package_share_directory("roboguard_odrive")
     pkg_roboguard_actions = get_package_share_directory("roboguard_actions")
+    pkg_capra_actions_mapper = get_package_share_directory("capra_actions_mapper")
 
     start_can_cmd = ExecuteProcess(
         cmd=[[
@@ -48,6 +49,12 @@ def generate_launch_description():
             os.path.join(pkg_roboguard_actions, "launch", "actions.launch.py"),
         ),
     )
+    
+    mapper = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_capra_actions_mapper, "launch", "mapper.launch.py"),
+        ),
+    )
 
     return LaunchDescription(
         [
@@ -55,5 +62,6 @@ def generate_launch_description():
             shutdown,
             odrive,
             actions,
+            mapper,
         ]
     )

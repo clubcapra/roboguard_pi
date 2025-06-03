@@ -1,4 +1,8 @@
 repositories:
+  capra_actions_mapper:
+    type: git
+    url: https://github.com/clubcapra/capra_actions_mapper.git
+    version: master
   capra_control_msgs:
     type: git
     url: https://github.com/clubcapra/capra_control_msgs.git
