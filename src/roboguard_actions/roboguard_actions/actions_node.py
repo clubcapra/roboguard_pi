@@ -202,7 +202,7 @@ class ActionsNode(Node):
         self.flipperFrontRight = self.declare_parameter('flippers.front_right_name', 'flipper_fr_j')
         self.flipperRearRight = self.declare_parameter('flippers.rear_right_name', 'flipper_rr_j')
         self.flipperMaxSpeed = self.declare_parameter('flippers.max_speed', 50.0)
-        self.flipperRatio = self.declare_parameter('flippers.gear_ratio', 540/1)
+        self.flipperRatio = self.declare_parameter('flippers.gear_ratio', 1/540)
         
         self.posToJoint = {
             'front_left': self.flipperFrontLeft.value,
@@ -262,6 +262,9 @@ class ActionsNode(Node):
     def _getHeader(self) -> Header:
         return Header(frame_id=self.get_name(), stamp=self.get_clock().now().to_msg())
         
+    def mps2tracks(self, speed: float) -> float:
+        return self.wheelRadius * speed / self.tracksGearRatio
+    
     def onEnable(self, enable: Bool):
         # Here, enable is not time critical, roboguard_odrive will read the enable topic as well
         # It will determine if the enable command is valid
@@ -271,13 +274,13 @@ class ActionsNode(Node):
         res = JointJog(header=self._getHeader())
         joints = []
         vels = []
-        maxSpeed = rev2rad(self.tracksMaxSpeed.value)
+        
         for name in self.leftJointNames.value:
             joints.append(name)
-            vels.append(clamp(-1, 1, tracksCmd.left) * maxSpeed)
+            vels.append(self.mps2tracks(tracksCmd.left))
         for name in self.rightJointNames.value:
             joints.append(name)
-            vels.append(clamp(-1, 1, tracksCmd.right) * maxSpeed)
+            vels.append(self.mps2tracks(tracksCmd.right))
             
         res.displacements = list([0.0 for _ in joints])
         res.joint_names = joints
