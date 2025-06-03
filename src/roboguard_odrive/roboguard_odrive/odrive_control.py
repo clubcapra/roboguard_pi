@@ -1,10 +1,9 @@
 import sys
-from time import sleep
 sys.path.append(__file__.removesuffix(f"/{__file__.split('/')[-1]}"))
 
 # std imports
+from time import sleep
 import asyncio
-import os
 from typing import Dict, Iterable, List, Optional, Tuple
 
 # 3rd party imports
@@ -19,7 +18,6 @@ from rclpy.duration import Duration
 from rclpy.time import Time
 
 # messages and services imports
-from odrive_types import ODriveAxisState, ODriveControlMode, ODriveInputMode, get_error_description
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
@@ -27,6 +25,7 @@ from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from std_msgs.msg import Header, Bool
 
 # local imports
+from odrive_types import ODriveAxisState, ODriveControlMode, ODriveInputMode, get_error_description
 from can_handler import CanError, CanHandler, CanStatus
 from odrive_can_node import ODriveCanNode
 from utils import dict2keyvalues, rad2rev, rev2rad, verifyLengthMatch, yesno
@@ -52,7 +51,6 @@ class ODriveControl(Node):
         self.bitrate = self.declare_parameter(
             'bitrate', 500000, ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Can bitrate'))
 
-        # Default values are required otherwise the type defaults to byte array (even if marqued as PARAMETER_STRING_ARRAY)
         joints = [
             "flipper_fl_j",
             "flipper_rl_j",
@@ -84,9 +82,9 @@ class ODriveControl(Node):
 
         # Create subscriptions
         self.jointTrajectorySub = self.create_subscription(
-            JointTrajectory, 'trajectory', self.onJointTrajectoryMsg, 1)
+            JointTrajectory, 'trajectory', self.onJointTrajectoryMsg, 5)
         self.jointJogSub = self.create_subscription(
-        JointJog, 'jog', self.onJointJogMsg, 1)
+        JointJog, 'jog', self.onJointJogMsg, 5)
         self.enableSub = self.create_subscription(Bool, 'enable', self.onEnableMsg, 1)
         self.estopSub = self.create_subscription(Bool, 'estop', self.onEStopMsg, 1)
 

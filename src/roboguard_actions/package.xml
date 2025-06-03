@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>roboguard_odrive</name>
+  <name>roboguard_actions</name>
   <version>0.0.0</version>
-  <description>Low level control of ODrives</description>
+  <description>Roboguard action adapter</description>
   <maintainer email="capra@ens.etsmtl.ca">Capra</maintainer>
   <license>MIT</license>
 
@@ -11,11 +11,8 @@
   <depend>trajectory_msgs</depend>
   <depend>control_msgs</depend>
   <depend>sensor_msgs</depend>
-  <depend>diagnostic_msgs</depend>
   <depend>std_msgs</depend>
-  <exec_depend>python3</exec_depend>
-  <exec_depend>python3-pip</exec_depend>
-  <exec_depend>python-can</exec_depend>
+  <depend>capra_control_msgs</depend>
 
   <export>
     <build_type>ament_python</build_type>
