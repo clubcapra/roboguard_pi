@@ -1,3 +1,4 @@
+import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
@@ -9,6 +10,7 @@ def generate_launch_description():
     # Get params files
     joy_params_file = dir + "/config/joy_params.yaml"
     teleop_joy_params_file = dir + "/config/teleop_joy_params.yaml"
+    
 
     return LaunchDescription(
         [
@@ -25,7 +27,7 @@ def generate_launch_description():
                 name="teleop_twist_joy_node",
                 parameters=[teleop_joy_params_file],
                 remappings=[
-                    # ("/joy", "/joy"),
+                    ("/joy", "/joy"),
                     # ("/cmd_vel", "/joy_vel"),
                 ],
             ),
