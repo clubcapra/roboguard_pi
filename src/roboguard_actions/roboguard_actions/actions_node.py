@@ -23,7 +23,7 @@ from std_msgs.msg import Header, Bool
 from capra_control_msgs.msg import Flippers, Tracks
 
 # local imports
-from utils import clamp, rad2rev, rev2rad, sign
+from utils import Meters, Radians, clamp, rad2rev, rev2rad, sign
 
 FLIPPER_MOVE_OFFSET = rev2rad(50)
 
@@ -66,11 +66,11 @@ class ValueRef(Generic[_K, _V]):
         return self._dict[self._key]
 
 class Instruction:
-    def __init__(self, offsets: List[ValueRef[str, float]], setOffsets: List[ValueRef[str, float]]):
+    def __init__(self, offsets: List[ValueRef[str, Radians]], setOffsets: List[ValueRef[str, Radians]]):
         self.offsets = offsets
         self.setOffsets = setOffsets
-        self.offset: float = 0.0
-        self.setOffset: float = 0.0
+        self.offset: Radians = 0.0
+        self.setOffset: Radians = 0.0
         self.hasAction = False
     
     @property
@@ -83,23 +83,22 @@ class Instruction:
     
 
 class SingleInstruction(Instruction):
-    def __init__(self, offset: ValueRef[str, float], setOffset: ValueRef[str, float]):
+    def __init__(self, offset: ValueRef[str, Radians], setOffset: ValueRef[str, Radians]):
         super().__init__([offset], [setOffset])
         self.singleControl = StateBool()
-        self.initial: float = 0.0
         
     def update(self):
         if not self.initialized:
             return
-        self.offset = self.initial + self.offsets[0]() - (self.setOffsets[0]() - self.setOffset)
+        self.offset = self.offsets[0]() - (self.setOffsets[0]() - self.setOffset)
         
-    def compute(self, command: float, enabled: float):
+    def compute(self, command: float, enabled: bool):
         if not self.initialized:
             return
         self.singleControl.state = command != 0 and enabled
         
         if self.singleControl.state:
-            self.setOffset = self.offset + sign(command) * rev2rad(FLIPPER_MOVE_OFFSET)
+            self.setOffset = self.offset + sign(command) * FLIPPER_MOVE_OFFSET
             self.hasAction = True
         elif self.singleControl.unlatched:
             self.setOffset = self.offset
@@ -108,7 +107,7 @@ class SingleInstruction(Instruction):
             self.hasAction = False
         
 class PairInstruction(Instruction):
-    def __init__(self, offsets: List[ValueRef[str, float]], setOffsets: List[ValueRef[str, float]]):
+    def __init__(self, offsets: List[ValueRef[str, Radians]], setOffsets: List[ValueRef[str, Radians]]):
         super().__init__(offsets, setOffsets)
         self.pairControl = StateBool()
         
@@ -123,7 +122,7 @@ class PairInstruction(Instruction):
         self.pairControl.state = command != 0 and enabled
         
         if self.pairControl.state:
-            self.setOffset = self.offset + sign(command) * rev2rad(FLIPPER_MOVE_OFFSET)
+            self.setOffset = self.offset + sign(command) * FLIPPER_MOVE_OFFSET
             self.hasAction = True
         elif self.pairControl.unlatched:
             self.setOffset = self.offset
@@ -132,7 +131,7 @@ class PairInstruction(Instruction):
             self.hasAction = False
             
 class AllInstruction(Instruction):
-    def __init__(self, offsets: List[ValueRef[str, float]], setOffsets: List[ValueRef[str, float]]):
+    def __init__(self, offsets: List[ValueRef[str, Radians]], setOffsets: List[ValueRef[str, Radians]]):
         super().__init__(offsets, setOffsets)
         self.allControl = StateBool()
 
@@ -147,7 +146,7 @@ class AllInstruction(Instruction):
         self.allControl.state = command != 0 and enabled
         
         if self.allControl.state:
-            self.setOffset = self.offset + sign(command) * rev2rad(FLIPPER_MOVE_OFFSET)
+            self.setOffset = self.offset + sign(command) * FLIPPER_MOVE_OFFSET
             self.hasAction = True
         elif self.allControl.unlatched:
             self.setOffset = self.offset
@@ -162,8 +161,8 @@ class ActionsNode(Node):
         
         # Declare variables
         self.enable = False
-        self.flipperPos: Dict[str, float] = {}
-        self.flipperSetPos: Dict[str, float] = {}
+        self.flipperPos: Dict[str, Radians] = {}
+        self.flipperSetPos: Dict[str, Radians] = {}
         
         # Declare parameters
         self.leftJointNames = self.declare_parameter(
@@ -262,7 +261,7 @@ class ActionsNode(Node):
     def _getHeader(self) -> Header:
         return Header(frame_id=self.get_name(), stamp=self.get_clock().now().to_msg())
         
-    def mps2tracks(self, speed: float) -> float:
+    def mps2tracks(self, speed: Meters) -> Radians:
         return speed / self.wheelRadius.value / self.tracksGearRatio.value
     
     def onEnable(self, enable: Bool):
@@ -273,7 +272,7 @@ class ActionsNode(Node):
     def onTracks(self, tracksCmd: Tracks):
         res = JointJog(header=self._getHeader())
         joints = []
-        vels = []
+        vels: List[Radians] = []
         
         for name in self.leftJointNames.value:
             joints.append(name)
@@ -311,7 +310,7 @@ class ActionsNode(Node):
         frontSelected = not allSelected and all([v != 0 for k, v in filter(lambda x: 'front' in x[0], commands.items())])
         rearSelected = not allSelected and all([v != 0 for k, v in filter(lambda x: 'rear' in x[0], commands.items())])
         
-        singleParams = {name: False for name in commands.keys()}
+        singleParams: Dict[str, bool] = {name: False for name in commands.keys()}
         
         if not allSelected:
             for name, cmd in commands.items():
@@ -327,7 +326,7 @@ class ActionsNode(Node):
         self.rearPairInstruction.compute(mean([commands['rear_left'], commands['rear_right']]), self.enable and rearSelected)
         self.allPairInstruction.compute(mean(commands.values()), self.enable and allSelected)
         
-        active = {
+        active: Dict[str, bool] = {
             name: (
                 self.allPairInstruction.hasAction or
                 ('front' in name and self.frontPairInstruction.hasAction) or
@@ -337,7 +336,7 @@ class ActionsNode(Node):
             for name in commands.keys()
         }
         
-        setPoints = {
+        setPoints: Dict[str, Radians] = {
             name: (
                 self.flipperSingleInstructions[name].setOffset + 
                 (self.frontPairInstruction.setOffset if 'front' in name else self.rearPairInstruction.setOffset) +
@@ -371,7 +370,7 @@ class ActionsNode(Node):
                 if self.flipperPos[name] is None:
                     # First feedback so we initialize offsets
                     self.flipperSetPos[name] = pos
-                    self.flipperSingleInstructions[name].initial = pos
+                    self.flipperSingleInstructions[name].setOffset = pos
                 self.flipperPos[name] = pos
                 
         

@@ -448,12 +448,14 @@ class ODriveControl(Node):
                             velTimedOut[name] = velTO
                             if self.posActions[name] is not None and not posTO:
                                 if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                    self.get_logger().info(f"Setting {name} to position control")
                                     node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
                                     node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
                                 node.set_position(self.posActions[name][1], 0, self.posActions[name][3])
                                 
                             elif self.velActions[name] is not None and not velTO:
                                 if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                    self.get_logger().info(f"Setting {name} to velocity control")
                                     node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
                                     node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
                                 node.set_velocity(self.velActions[name][1])

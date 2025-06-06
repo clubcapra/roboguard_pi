@@ -1,11 +1,15 @@
 from math import pi
 from typing import Sized, TypeVar
 
-def rad2rev(rad: float) -> float:
+Revs = float
+Radians = float
+Meters = float
+
+def rad2rev(rad: Radians) -> Revs:
     return rad / (2 * pi)
 
 
-def rev2rad(rev: float) -> float:
+def rev2rad(rev: Revs) -> Radians:
     return rev * 2 * pi
 
 
