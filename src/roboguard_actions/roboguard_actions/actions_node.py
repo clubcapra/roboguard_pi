@@ -345,16 +345,18 @@ class ActionsNode(Node):
             for name in commands.keys()
         }
         
+        
+        
         traj = JointTrajectory(header=self._getHeader())
         point = JointTrajectoryPoint()
         
         for name, act in active.items():
-            if act:
-                traj.joint_names.append(self.posToJoint[name])
-                point.positions.append(setPoints[name])
-                point.velocities.append(rev2rad(self.flipperMaxSpeed.value * abs(commands[name])))
-                point.accelerations.append(0)
-                point.effort.append(0)
+            # if act:
+            traj.joint_names.append(self.posToJoint[name])
+            point.positions.append(setPoints[name])
+            point.velocities.append(rev2rad(self.flipperMaxSpeed.value * abs(commands[name])))
+            point.accelerations.append(0)
+            point.effort.append(0)
         
         traj.points.append(point)
         
