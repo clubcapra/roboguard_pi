@@ -105,10 +105,24 @@ class ODriveControl(Node):
             23,
             24,
         ]
+        continuousCurrents = [
+            6.0,
+            6.0,
+            6.0,
+            6.0,
+            8.0,
+            8.0,
+            8.0,
+            8.0,
+        ]
         self.jointNames = self.declare_parameter(
             'joint_names', joints, ParameterDescriptor(type=ParameterType.PARAMETER_STRING_ARRAY))
         self.jointCanIDs = self.declare_parameter(
             'joint_can_ids', joint_ids, ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER_ARRAY))
+        self.continuousCurrentLimits = self.declare_parameter(
+            'continuous_current_limits', continuousCurrents, ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER_ARRAY))
+        self.currentLimitTime: rclpy.Parameter = self.declare_parameter(
+            'peak_current_time', 0.1, ParameterDescriptor(type=ParameterType.PARAMETER_DOUBLE, description='Max time to be over continuous current'))
         self.publishRate: rclpy.Parameter = self.declare_parameter(
             'publish_rate', 20.0, ParameterDescriptor(type=ParameterType.PARAMETER_DOUBLE, description='Publish rate in Hz'))
         self.canWriteRate: rclpy.Parameter = self.declare_parameter(
@@ -136,8 +150,15 @@ class ODriveControl(Node):
         # Setup can nodes
         self.canHandler = CanHandler(self.get_logger(), self.channel.value, self.bitrate.value, self._onCanError)
         self.nodes: Dict[str, ODriveCanNode] = {
-            name: ODriveCanNode(self.canHandler, nodeID, self.loop, self._onDriveStatus)
-                for name, nodeID in zip(self.jointNames.value, self.jointCanIDs.value)
+            name: ODriveCanNode(
+                    self.canHandler,
+                    nodeID,
+                    self.loop,
+                    currentLimit,
+                    self.currentLimitTime.value,
+                    self._onDriveStatus
+                )
+                for name, nodeID, currentLimit in zip(self.jointNames.value, self.jointCanIDs.value, self.continuousCurrentLimits.value)
         }
         
         self.reader = can.AsyncBufferedReader()
@@ -204,7 +225,7 @@ class ODriveControl(Node):
             self.get_logger().warning('Invalid jog, size 0')
             return
         if not verifyLengthMatch(jog.joint_names, jog.velocities):
-            self.get_logger().error('Invalid jof, size mismatch')
+            self.get_logger().error('Invalid jog, size mismatch')
             return
 
         for name, velocity in zip(jog.joint_names, jog.velocities):
@@ -295,6 +316,11 @@ class ODriveControl(Node):
                 level=DiagnosticStatus.ERROR,
                 message='Disconnected'
             )
+        if node.currentPeakError:
+            return DiagnosticStatus(
+                level=DiagnosticStatus.ERROR,
+                message="PEAK CURRENT REACHED"
+            )
         if node.error != 0:
             return DiagnosticStatus(
                 level=DiagnosticStatus.ERROR,
@@ -314,6 +340,7 @@ class ODriveControl(Node):
             values: Dict[str, str] = {
                 'connected': yesno(node.connected),
                 'state': node.state.name,
+                'current_peak_error': yesno(node.currentPeakError),
                 'error': get_error_description(node.error),
                 'disarm_reason': get_error_description(node.disarmReason),
                 'position': f'{round(node.position, 3)} rev',
@@ -405,7 +432,7 @@ class ODriveControl(Node):
                         node.clear_errors_msg()
                     else:
                         lastOkTime[name] = startTime
-                    if self.estop:
+                    if self.estop or node.currentPeakError:
                         node.call_estop()
                         node.feed_watchdog_msg()
                     else:

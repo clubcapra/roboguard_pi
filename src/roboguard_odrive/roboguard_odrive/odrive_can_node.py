@@ -13,10 +13,19 @@ from can_handler import CanHandler
 
 
 class ODriveCanNode:
-    def __init__(self, handler: CanHandler, node_id: int, loop: asyncio.AbstractEventLoop, onStatusChangedCb: Optional[Callable]):
+    def __init__(
+            self,
+            handler: CanHandler,
+            node_id: int,
+            loop: asyncio.AbstractEventLoop,
+            continuousCurrentLimit: float,
+            peakCurrentTime: float,
+            onStatusChangedCb: Optional[Callable]):
         self.handler: CanHandler = handler
         self.node_id: int = node_id
         self.loop = loop
+        self.continuousCurrentLimit = continuousCurrentLimit
+        self.peakCurrentTime = peakCurrentTime
         self.onStatusChangedCb = onStatusChangedCb
         self.reader: can.AsyncBufferedReader = can.AsyncBufferedReader()
         self.position = 0.0
@@ -39,6 +48,8 @@ class ODriveCanNode:
             'odrive_control').get_child(f'ODriveCanNode{self.node_id}')
         self._recursive = False
         self._lastMessage = datetime.min
+        self._peakCurrentStart = datetime.min
+        self.currentPeakError = False
 
     @property
     def connected(self) -> bool:
@@ -110,6 +121,13 @@ class ODriveCanNode:
             self.position, self.velocity = struct.unpack('<ff', msg.data)
         elif cmd_id == ODriveCommand.GET_BUS_VOLTAGE_CURRENT_CMD:
             self.voltage, self.current = struct.unpack('<ff', msg.data)
+            if self.current >= self.continuousCurrentLimit:
+                if (datetime.now() - self._peakCurrentStart) >= timedelta(seconds=self.peakCurrentTime):
+                    if not self.currentPeakError:
+                        self.logger.fatal("PEAK CURRENT REACHED!!!")
+                    self.currentPeakError = True
+            else:
+                self._peakCurrentStart = datetime.now()
         elif cmd_id == ODriveCommand.GET_TEMPERATURE_CMD:
             self.fetTemperature, self.motorTemperature = struct.unpack(
                 '<ff', msg.data)

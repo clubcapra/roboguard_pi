@@ -23,6 +23,17 @@ odrive_control:
       23,
       24,
     ]
+    continuous_current_limits: [
+      6.0,
+      6.0,
+      6.0,
+      6.0,
+      8.0,
+      8.0,
+      8.0,
+      8.0,
+    ]
+    peak_current_time: 0.1
 
     publish_rate: 20.0
     can_write_rate: 10.0
