@@ -90,7 +90,9 @@ class SingleInstruction(Instruction):
     def update(self):
         if not self.initialized:
             return
-        self.offset = self.offsets[0]() - (self.setOffsets[0]() - self.setOffset)
+        o = self.offsets[0]()
+        so = self.setOffsets[0]()
+        self.offset = o - (so - self.setOffset)
         
     def compute(self, command: float, enabled: bool):
         if not self.initialized:
@@ -138,7 +140,7 @@ class AllInstruction(Instruction):
     def update(self):
         if not self.initialized:
             return
-        self.offset = mean([o() - (s() - self.setOffset) for o, s in zip(self.offsets, self.setOffsets)])
+        self.offset = mean([position() - (setpoint() - self.setOffset) for position, setpoint in zip(self.offsets, self.setOffsets)])
         
     def compute(self, command: float, enabled: bool):
         if not self.initialized:
@@ -336,16 +338,12 @@ class ActionsNode(Node):
             for name in commands.keys()
         }
         
-        setPoints: Dict[str, Radians] = {
-            name: (
+        for name in commands.keys():
+            self.flipperSetPos[name] = (
                 self.flipperSingleInstructions[name].setOffset + 
                 (self.frontPairInstruction.setOffset if 'front' in name else self.rearPairInstruction.setOffset) +
                 self.allPairInstruction.setOffset
             )
-            for name in commands.keys()
-        }
-        
-        
         
         traj = JointTrajectory(header=self._getHeader())
         point = JointTrajectoryPoint()
@@ -353,7 +351,7 @@ class ActionsNode(Node):
         for name, act in active.items():
             # if act:
             traj.joint_names.append(self.posToJoint[name])
-            point.positions.append(setPoints[name])
+            point.positions.append(self.flipperSetPos[name])
             point.velocities.append(rev2rad(self.flipperMaxSpeed.value * abs(commands[name])))
             point.accelerations.append(0)
             point.effort.append(0)

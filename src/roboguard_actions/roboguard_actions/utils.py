@@ -28,3 +28,6 @@ def bounce(minValue: float, maxValue: float, fac: float) -> float:
     m = fac % 1
     f = 1 - (abs(m - 0.5) * 2.0)
     return minValue + (maxValue - minValue) * f
+
+def niceFloat(value: float, numDigits: int = 3, just:int = 6) -> str:
+    return str(round(value, numDigits)).ljust(just)
