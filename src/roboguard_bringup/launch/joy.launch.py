@@ -20,6 +20,9 @@ def generate_launch_description():
                 name="game_controller_node",
                 output="screen",
                 parameters=[joy_params_file],
+                remappings=[
+                    ("/joy", "/rove/joy"),
+                ],
             ),
             Node(
                 package="teleop_twist_joy",
@@ -27,8 +30,8 @@ def generate_launch_description():
                 name="teleop_twist_joy_node",
                 parameters=[teleop_joy_params_file],
                 remappings=[
-                    # ("/joy", "/joy"),
-                    # ("/cmd_vel", "/joy_vel"),
+                    ("/joy", "/rove/joy"),
+                    ("/cmd_vel", "/rove/cmd_vel"),
                 ],
             ),
         ]
