@@ -217,7 +217,8 @@ class ODriveControl(Node):
         ):
             position = rad2rev(position)
             velocity = rad2rev(velocity)
-            self.posActions[name] = (Time.from_msg(trajectory.header.stamp), position, velocity, effort)
+            # self.posActions[name] = (Time.from_msg(trajectory.header.stamp), position, velocity, effort)
+            self.posActions[name] = (Time.from_msg(self._getHeader().stamp), position, velocity, effort)
 
     def onJointJogMsg(self, jog: JointJog):
         # Velocity control
@@ -231,7 +232,9 @@ class ODriveControl(Node):
         for name, velocity in zip(jog.joint_names, jog.velocities):
             velocity = rad2rev(velocity)
 
-            self.velActions[name] = (Time.from_msg(jog.header.stamp), velocity)
+            # self.velActions[name] = (Time.from_msg(jog.header.stamp), velocity)
+            self.velActions[name] = (Time.from_msg(self._getHeader().stamp), velocity)
+            self.get_logger().info(f"Jog: {jog.velocities}")
 
     def onEnableMsg(self, enable: Bool):
         self.enable = enable.data
