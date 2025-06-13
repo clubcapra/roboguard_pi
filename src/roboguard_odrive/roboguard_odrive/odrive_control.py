@@ -234,7 +234,6 @@ class ODriveControl(Node):
 
             # self.velActions[name] = (Time.from_msg(jog.header.stamp), velocity)
             self.velActions[name] = (Time.from_msg(self._getHeader().stamp), velocity)
-            self.get_logger().info(f"Jog: {jog.velocities}")
 
     def onEnableMsg(self, enable: Bool):
         self.enable = enable.data
