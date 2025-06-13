@@ -21,6 +21,7 @@ from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectoryPoint, JointTrajectory
 from std_msgs.msg import Header, Bool
 from capra_control_msgs.msg import Flippers, Tracks
+from nav_msgs.msg import Odometry
 
 # local imports
 from utils import Meters, Radians, clamp, rad2rev, rev2rad, sign
