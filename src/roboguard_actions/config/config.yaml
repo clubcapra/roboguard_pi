@@ -6,6 +6,7 @@ roboguard_actions:
 
       wheel_radius: 0.1075
       wheel_separation: 0.175
+      wheel_separation_multiplier: 10.0
       gear_ratio: 0.03333
       max_speed: 58
 
@@ -15,5 +16,14 @@ roboguard_actions:
       front_right_name: 'flipper_fr_j'
       rear_right_name: 'flipper_rr_j'
 
-      max_speed: 50.0
       gear_ratio: 0.00185185
+      max_speed: 50.0
+    
+    diff_drive:
+      update_rate: 20
+      odom_frame_id: odom
+      base_frame_id: base_link
+      pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+      twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+      open_loop: true
+      enable_odom_tf: true

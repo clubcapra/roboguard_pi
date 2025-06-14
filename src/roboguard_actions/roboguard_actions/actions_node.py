@@ -1,10 +1,16 @@
+from collections import deque
 import json
+import math
 from statistics import mean
 import sys
+
+from sympy import Quaternion
+
+import tf2_ros
 sys.path.append(__file__.removesuffix(f"/{__file__.split('/')[-1]}"))
 
 # std imports
-from typing import Dict, Generic, List, Optional, TypeVar
+from typing import Dict, Generic, List, Optional, Tuple, TypeVar
 from pathlib import Path
 
 # ros imports
@@ -14,6 +20,7 @@ from rclpy.node import Node
 from rclpy.constants import S_TO_NS
 from rclpy.duration import Duration
 from rclpy.time import Time
+from tf2_ros import TransformBroadcaster
 
 # messages and services imports
 from control_msgs.msg import JointJog
@@ -22,9 +29,11 @@ from trajectory_msgs.msg import JointTrajectoryPoint, JointTrajectory
 from std_msgs.msg import Header, Bool
 from capra_control_msgs.msg import Flippers, Tracks
 from nav_msgs.msg import Odometry
+from geometry_msgs.msg import TransformStamped, Twist
 
 # local imports
 from utils import Meters, Radians, clamp, rad2rev, rev2rad, sign
+from odometry import DiffOdometry
 
 FLIPPER_MOVE_OFFSET = rev2rad(50)
 
@@ -166,8 +175,14 @@ class ActionsNode(Node):
         self.enable = False
         self.flipperPos: Dict[str, Radians] = {}
         self.flipperSetPos: Dict[str, Radians] = {}
+        self.odom: DiffOdometry = DiffOdometry()
+        self.previousPublishTimestamp: Time = self.get_clock().now()
+        self.referenceInterfaces: Tuple[Meters, Radians] = (0.0, 0.0)
+        self.leftTracksPos: Radians = 0.0
+        self.rightTracksPos: Radians = 0.0
         
         # Declare parameters
+        # Tracks params
         self.leftJointNames = self.declare_parameter(
             'tracks.left_joint_names',
             ['track_fl_j', 'track_rl_j'],
@@ -188,6 +203,7 @@ class ActionsNode(Node):
             0.175,
             ParameterDescriptor(description="Distance between contact points")
         )
+        self.wheelSeparationMultiplier = self.declare_parameter('tracks.wheel_separation_multiplier',  10.0)
         self.tracksGearRatio = self.declare_parameter(
             'tracks.gear_ratio',
             1/30,
@@ -199,12 +215,42 @@ class ActionsNode(Node):
             ParameterDescriptor(description="Max motor speed in rev/s")
         )
         
+        # Flippers params
         self.flipperFrontLeft = self.declare_parameter('flippers.front_left_name', 'flipper_fl_j')
         self.flipperRearLeft = self.declare_parameter('flippers.rear_left_name', 'flipper_rl_j')
         self.flipperFrontRight = self.declare_parameter('flippers.front_right_name', 'flipper_fr_j')
         self.flipperRearRight = self.declare_parameter('flippers.rear_right_name', 'flipper_rr_j')
-        self.flipperMaxSpeed = self.declare_parameter('flippers.max_speed', 50.0)
         self.flipperRatio = self.declare_parameter('flippers.gear_ratio', 1/540)
+        self.flipperMaxSpeed = self.declare_parameter('flippers.max_speed', 50.0)
+        
+        # Diff drive params
+        self.updateRate = self.declare_parameter('diff_drive.update_rate',  20)
+        self.odomFrameID = self.declare_parameter('diff_drive.odom_frame_id',  'odom')
+        self.baseFrameID = self.declare_parameter('diff_drive.base_frame_id',  'base_link')
+        self.poseCovarianceDiagonal = self.declare_parameter('diff_drive.pose_covariance_diagonal',  [0.001, 0.001, 0.001, 0.001, 0.001, 0.01])
+        self.twistCovarianceDiagonal = self.declare_parameter('diff_drive.twist_covariance_diagonal',  [0.001, 0.001, 0.001, 0.001, 0.001, 0.01])
+        self.openLoop = self.declare_parameter('diff_drive.open_loop',  True)
+        self.enableOdomTF = self.declare_parameter('diff_drive.enable_odom_tf',  True)
+        
+        # Read params
+        self.odom.setWheelParams(
+            self.wheelSeparation.value * self.wheelSeparationMultiplier.value,
+            self.wheelRadius.value / self.tracksGearRatio.value,
+            self.wheelRadius.value / self.tracksGearRatio.value
+        )
+        
+        self.odometryMessage: Odometry = Odometry()
+        self.odometryMessage.header.frame_id = self.odomFrameID.value
+        self.odometryMessage.child_frame_id = self.baseFrameID.value
+        for index in range(6):
+            # 0, 7, 14, 21, 28, 35
+            diagonal_index = 6 * index + index
+            self.odometryMessage.pose.covariance[diagonal_index] = self.poseCovarianceDiagonal.value[index]
+            self.odometryMessage.twist.covariance[diagonal_index] = self.twistCovarianceDiagonal.value[index]
+        
+            self.odometryTFMessage = TransformStamped()
+            self.odometryTFMessage.header.frame_id = self.odomFrameID.value
+            self.odometryTFMessage.child_frame_id = self.baseFrameID.value
         
         self.posToJoint = {
             'front_left': self.flipperFrontLeft.value,
@@ -260,6 +306,11 @@ class ActionsNode(Node):
         # Create publishers
         self.jointTrajectoryPub = self.create_publisher(JointTrajectory, 'trajectory', 1)
         self.jointJogPub = self.create_publisher(JointJog, 'jog', 1)
+        self.odomPub = self.create_publisher(Odometry, 'odom', 10)
+        self.odomTFPub = TransformBroadcaster(self)
+        
+        # Create timers
+        self.odomTimer = self.create_timer(1.0/self.updateRate.value, self.onOdomTimer)
         
     def _getHeader(self) -> Header:
         return Header(frame_id=self.get_name(), stamp=self.get_clock().now().to_msg())
@@ -276,6 +327,9 @@ class ActionsNode(Node):
         res = JointJog(header=self._getHeader())
         joints = []
         vels: List[Radians] = []
+        linearCmd = mean([tracksCmd.left, tracksCmd.right])
+        angularCmd = (tracksCmd.right - linearCmd) / (self.wheelSeparation / 2) / self.wheelSeparationMultiplier
+        self.referenceInterfaces = (linearCmd, angularCmd)
         
         for name in self.leftJointNames.value:
             joints.append(name)
@@ -362,6 +416,8 @@ class ActionsNode(Node):
         self.jointTrajectoryPub.publish(traj)
         
     def onJointStates(self, states: JointState):
+        left = 0.0
+        right = 0.0
         for joint, pos in zip(states.name, states.position):
             if joint in self.jointToPos.keys():
                 # joint is a flipper
@@ -373,7 +429,77 @@ class ActionsNode(Node):
                     self.flipperSetPos[name] = pos
                     self.flipperSingleInstructions[name].setOffset = pos
                 self.flipperPos[name] = pos
-                
+            if joint in self.leftJointNames.value:
+                left += pos
+            if joint in self.rightJointNames.value:
+                right += pos
+        self.leftTracksPos = left / len(self.leftJointNames.value)
+        self.rightTracksPos = right / len(self.rightJointNames.value)
+             
+    def onOdomTimer(self):
+        time: Time = self.get_clock().now()
+        period: Duration = time - self.previousPublishTimestamp
+        self.previousPublishTimestamp = time
+        logger = self.get_logger()
+        linearCmd, angularCmd = self.referenceInterfaces
+
+        if not (math.isfinite(linearCmd) and math.isfinite(angularCmd)):
+            logger.warn("Cmd out of range")
+            return
+
+        # Wheel parameters
+        ws = self.wheelSeparation.value * self.wheelSeparationMultiplier.value
+        lw = self.wheelRadius.value / self.tracksGearRatio.value
+        rw = self.wheelRadius.value / self.tracksGearRatio.value
+
+        # Odometry update
+        if self.openLoop:
+            self.odom.updateOpenLoop(linearCmd, angularCmd, time)
+        else:
+            self.odom.update(self.leftTracksPos, self.rightTracksPos, time)
+
+        self._publishOdom(time)
+
+    def _orientationFromRPY(self, roll:Radians, pitch:Radians, yaw:Radians) -> Tuple[float, float, float, float]:
+        halfYaw = yaw * 0.5
+        halfPitch = pitch * 0.5
+        halfRoll = roll * 0.5
+        cosYaw = halfYaw
+        sinYaw = halfYaw
+        cosPitch = halfPitch
+        sinPitch = halfPitch
+        cosRoll = halfRoll
+        sinRoll = halfRoll
+        return (
+            sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw,
+            cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw,
+            cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw,
+            cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw
+        )
+    
+    def _publishOdom(self, time: Time):
+        orientation = self._orientationFromRPY(0.0, 0.0, self.odom.heading)
+        self.odometryMessage.header.stamp = time
+        self.odometryMessage.pose.pose.position.x = self.odom.x
+        self.odometryMessage.pose.pose.position.y = self.odom.y
+        self.odometryMessage.pose.pose.orientation.x = orientation[0]
+        self.odometryMessage.pose.pose.orientation.y = orientation[1]
+        self.odometryMessage.pose.pose.orientation.z = orientation[2]
+        self.odometryMessage.pose.pose.orientation.w = orientation[3]
+        self.odometryMessage.twist.twist.linear.x = self.odom.linear
+        self.odometryMessage.twist.twist.angular.z = self.odom.angular
+        self.odomPub.publish(self.odometryMessage)
+        
+        if self.enableOdomTF.value:
+            self.odometryTFMessage.header.stamp = time
+            self.odometryTFMessage.transform.translation.x = self.odom.x
+            self.odometryTFMessage.transform.translation.y = self.odom.y
+            self.odometryTFMessage.transform.rotation.x = orientation[0]
+            self.odometryTFMessage.transform.rotation.y = orientation[1]
+            self.odometryTFMessage.transform.rotation.z = orientation[2]
+            self.odometryTFMessage.transform.rotation.w = orientation[3]
+            self.odomTFPub.sendTransform(self.odometryTFMessage)
+        
         
 def main(args=None):
     rclpy.init(args=args)
