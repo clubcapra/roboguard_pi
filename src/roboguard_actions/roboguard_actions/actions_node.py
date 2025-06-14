@@ -4,9 +4,6 @@ import math
 from statistics import mean
 import sys
 
-from sympy import Quaternion
-
-import tf2_ros
 sys.path.append(__file__.removesuffix(f"/{__file__.split('/')[-1]}"))
 
 # std imports
@@ -175,8 +172,8 @@ class ActionsNode(Node):
         self.enable = False
         self.flipperPos: Dict[str, Radians] = {}
         self.flipperSetPos: Dict[str, Radians] = {}
-        self.odom: DiffOdometry = DiffOdometry()
         self.previousPublishTimestamp: Time = self.get_clock().now()
+        self.odom: DiffOdometry = DiffOdometry(self.previousPublishTimestamp)
         self.referenceInterfaces: Tuple[Meters, Radians] = (0.0, 0.0)
         self.leftTracksPos: Radians = 0.0
         self.rightTracksPos: Radians = 0.0
@@ -310,7 +307,7 @@ class ActionsNode(Node):
         self.odomTFPub = TransformBroadcaster(self)
         
         # Create timers
-        self.odomTimer = self.create_timer(1.0/self.updateRate.value, self.onOdomTimer)
+        # self.odomTimer = self.create_timer(1.0/self.updateRate.value, self.onOdomTimer)
         
     def _getHeader(self) -> Header:
         return Header(frame_id=self.get_name(), stamp=self.get_clock().now().to_msg())
@@ -328,7 +325,7 @@ class ActionsNode(Node):
         joints = []
         vels: List[Radians] = []
         linearCmd = mean([tracksCmd.left, tracksCmd.right])
-        angularCmd = (tracksCmd.right - linearCmd) / (self.wheelSeparation / 2) / self.wheelSeparationMultiplier
+        angularCmd = (tracksCmd.right - linearCmd) / (self.wheelSeparation.value / 2) / self.wheelSeparationMultiplier.value
         self.referenceInterfaces = (linearCmd, angularCmd)
         
         for name in self.leftJointNames.value:
@@ -404,7 +401,7 @@ class ActionsNode(Node):
         point = JointTrajectoryPoint()
         
         for name, act in active.items():
-            # if act:
+            #if act:
             traj.joint_names.append(self.posToJoint[name])
             point.positions.append(self.flipperSetPos[name])
             point.velocities.append(rev2rad(self.flipperMaxSpeed.value * abs(commands[name])))
@@ -438,7 +435,6 @@ class ActionsNode(Node):
              
     def onOdomTimer(self):
         time: Time = self.get_clock().now()
-        period: Duration = time - self.previousPublishTimestamp
         self.previousPublishTimestamp = time
         logger = self.get_logger()
         linearCmd, angularCmd = self.referenceInterfaces
@@ -479,7 +475,7 @@ class ActionsNode(Node):
     
     def _publishOdom(self, time: Time):
         orientation = self._orientationFromRPY(0.0, 0.0, self.odom.heading)
-        self.odometryMessage.header.stamp = time
+        self.odometryMessage.header.stamp = time.to_msg()
         self.odometryMessage.pose.pose.position.x = self.odom.x
         self.odometryMessage.pose.pose.position.y = self.odom.y
         self.odometryMessage.pose.pose.orientation.x = orientation[0]
@@ -491,7 +487,7 @@ class ActionsNode(Node):
         self.odomPub.publish(self.odometryMessage)
         
         if self.enableOdomTF.value:
-            self.odometryTFMessage.header.stamp = time
+            self.odometryTFMessage.header.stamp = time.to_msg()
             self.odometryTFMessage.transform.translation.x = self.odom.x
             self.odometryTFMessage.transform.translation.y = self.odom.y
             self.odometryTFMessage.transform.rotation.x = orientation[0]

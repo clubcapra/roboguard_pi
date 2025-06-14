@@ -25,9 +25,9 @@ class RollingMeanAccumulator:
 
 
 class DiffOdometry:
-    def __init__(self, velocity_rolling_window_size: int = 10) -> None:
+    def __init__(self, time: Time, velocity_rolling_window_size: int = 10) -> None:
         #Current timestamp:
-        self.timestamp: Time = Time()
+        self.timestamp: Time = time
         
         # Current pose:
         self.x: Meters = 0.0
