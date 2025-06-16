@@ -172,11 +172,11 @@ class ActionsNode(Node):
         self.enable = False
         self.flipperPos: Dict[str, Radians] = {}
         self.flipperSetPos: Dict[str, Radians] = {}
-        self.previousPublishTimestamp: Time = self.get_clock().now()
-        self.odom: DiffOdometry = DiffOdometry(self.previousPublishTimestamp)
+        self.odom: DiffOdometry = DiffOdometry(self.get_clock().now())
         self.referenceInterfaces: Tuple[Meters, Radians] = (0.0, 0.0)
         self.leftTracksPos: Radians = 0.0
         self.rightTracksPos: Radians = 0.0
+        self.lastUpdate: Time = self.get_clock().now()
         
         # Declare parameters
         # Tracks params
@@ -226,14 +226,14 @@ class ActionsNode(Node):
         self.baseFrameID = self.declare_parameter('diff_drive.base_frame_id',  'base_link')
         self.poseCovarianceDiagonal = self.declare_parameter('diff_drive.pose_covariance_diagonal',  [0.001, 0.001, 0.001, 0.001, 0.001, 0.01])
         self.twistCovarianceDiagonal = self.declare_parameter('diff_drive.twist_covariance_diagonal',  [0.001, 0.001, 0.001, 0.001, 0.001, 0.01])
-        self.openLoop = self.declare_parameter('diff_drive.open_loop',  True)
+        self.openLoop = self.declare_parameter('diff_drive.open_loop',  False)
         self.enableOdomTF = self.declare_parameter('diff_drive.enable_odom_tf',  True)
         
         # Read params
         self.odom.setWheelParams(
             self.wheelSeparation.value * self.wheelSeparationMultiplier.value,
-            self.wheelRadius.value / self.tracksGearRatio.value,
-            self.wheelRadius.value / self.tracksGearRatio.value
+            self.wheelRadius.value * self.tracksGearRatio.value,
+            self.wheelRadius.value * self.tracksGearRatio.value
         )
         
         self.odometryMessage: Odometry = Odometry()
@@ -432,29 +432,20 @@ class ActionsNode(Node):
                 right += pos
         self.leftTracksPos = left / len(self.leftJointNames.value)
         self.rightTracksPos = right / len(self.rightJointNames.value)
+        self.lastUpdate = Time.from_msg(states.header.stamp)
              
     def onOdomTimer(self):
-        time: Time = self.get_clock().now()
-        self.previousPublishTimestamp = time
-        logger = self.get_logger()
-        linearCmd, angularCmd = self.referenceInterfaces
-
-        if not (math.isfinite(linearCmd) and math.isfinite(angularCmd)):
-            logger.warn("Cmd out of range")
-            return
-
-        # Wheel parameters
-        ws = self.wheelSeparation.value * self.wheelSeparationMultiplier.value
-        lw = self.wheelRadius.value / self.tracksGearRatio.value
-        rw = self.wheelRadius.value / self.tracksGearRatio.value
-
         # Odometry update
-        if self.openLoop:
-            self.odom.updateOpenLoop(linearCmd, angularCmd, time)
+        if self.openLoop.value:
+            linearCmd, angularCmd = self.referenceInterfaces
+            if not (math.isfinite(linearCmd) and math.isfinite(angularCmd)):
+                self.get_logger().warn("Cmd out of range")
+                return
+            self.odom.updateOpenLoop(linearCmd, angularCmd, self.lastUpdate)
         else:
-            self.odom.update(self.leftTracksPos, self.rightTracksPos, time)
+            self.odom.update(self.leftTracksPos, self.rightTracksPos, self.lastUpdate)
 
-        self._publishOdom(time)
+        self._publishOdom(self.lastUpdate)
 
     def _orientationFromRPY(self, roll:Radians, pitch:Radians, yaw:Radians) -> Tuple[float, float, float, float]:
         halfYaw = yaw * 0.5

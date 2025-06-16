@@ -20,10 +20,10 @@ roboguard_actions:
       max_speed: 50.0
     
     diff_drive:
-      update_rate: 20
+      update_rate: 10
       odom_frame_id: odom
       base_frame_id: base_link
       pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
       twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
-      open_loop: true
-      enable_odom_tf: true
+      open_loop: false
+      enable_odom_tf: false
