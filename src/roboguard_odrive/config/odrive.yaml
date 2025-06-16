@@ -5,9 +5,9 @@ odrive_control:
 
     joint_names: [
       "flipper_fl_j",
-      "flipper_rl_j",
+      #"flipper_rl_j",
       "flipper_fr_j",
-      "flipper_rr_j",
+      #"flipper_rr_j",
       "track_fl_j",
       "track_rl_j",
       "track_fr_j",
@@ -15,9 +15,9 @@ odrive_control:
     ]
     joint_can_ids: [
       11,
-      12,
+      #12,
       13,
-      14,
+      #14,
       21,
       22,
       23,
@@ -25,9 +25,9 @@ odrive_control:
     ]
     continuous_current_limits: [
       10.0,
+      #10.0,
       10.0,
-      10.0,
-      10.0,
+      #10.0,
       8.0,
       8.0,
       8.0,

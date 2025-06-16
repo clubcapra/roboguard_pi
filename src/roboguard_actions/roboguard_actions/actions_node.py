@@ -361,24 +361,24 @@ class ActionsNode(Node):
             'rear_right': clamp(-1, 1, flippersCmd.rear_right),
         }
         allSelected = all([v != 0.0 for v in commands.values()])
-        frontSelected = not allSelected and all([v != 0 for k, v in filter(lambda x: 'front' in x[0], commands.items())])
-        rearSelected = not allSelected and all([v != 0 for k, v in filter(lambda x: 'rear' in x[0], commands.items())])
+        #frontSelected = not allSelected and all([v != 0 for k, v in filter(lambda x: 'front' in x[0], commands.items())])
+        #rearSelected = not allSelected and all([v != 0 for k, v in filter(lambda x: 'rear' in x[0], commands.items())])
         
         singleParams: Dict[str, bool] = {name: False for name in commands.keys()}
         
-        if not allSelected:
-            for name, cmd in commands.items():
-                if 'front' in name and not frontSelected:
-                    singleParams[name] = self.enable
-                if 'rear' in name and not rearSelected:
-                    singleParams[name] = self.enable
+        #if not allSelected:
+        #    for name, cmd in commands.items():
+        #        if 'front' in name and not frontSelected:
+        #            singleParams[name] = self.enable
+                #if 'rear' in name and not rearSelected:
+                #    singleParams[name] = self.enable
         
         for name, cmd in commands.items():
             self.flipperSingleInstructions[name].compute(cmd, singleParams[name])
         
-        self.frontPairInstruction.compute(mean([commands['front_left'], commands['front_right']]), self.enable and frontSelected)
-        self.rearPairInstruction.compute(mean([commands['rear_left'], commands['rear_right']]), self.enable and rearSelected)
-        self.allPairInstruction.compute(mean(commands.values()), self.enable and allSelected)
+        self.frontPairInstruction.compute(mean([commands['front_left'], commands['front_right']]), self.enable and allSelected)
+        #self.rearPairInstruction.compute(mean([commands['rear_left'], commands['rear_right']]), self.enable and rearSelected)
+        #self.allPairInstruction.compute(mean(commands.values()), self.enable and allSelected)
         
         active: Dict[str, bool] = {
             name: (
