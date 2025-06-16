@@ -440,27 +440,30 @@ class ODriveControl(Node):
                     else:
                         if self.enable:
                             now = self.get_clock().now()
-                            posTO = False if self.posActions[name] is None else (now - self.posActions[name][0] > Duration(nanoseconds=0.5*S_TO_NS))
-                            velTO = False if self.velActions[name] is None else (now - self.velActions[name][0] > Duration(nanoseconds=0.5*S_TO_NS))
+                            nowt = datetime.now()
+                            posAction = self.posActions[name]
+                            velAction = self.velActions[name]
+                            posTO = False if posAction is None else (now - posAction[0] > Duration(nanoseconds=0.5*S_TO_NS))
+                            velTO = False if velAction is None else (now - velAction[0] > Duration(nanoseconds=0.5*S_TO_NS))
                             if posTO and not posTimedOut[name]:
                                 self.get_logger().warn(f"Node: {name} timed out pos")
                             if velTO and not velTimedOut[name]:
                                 self.get_logger().warn(f"Node: {name} timed out vel")
                             posTimedOut[name] = posTO
                             velTimedOut[name] = velTO
-                            if self.posActions[name] is not None and not posTO:
+                            if posAction is not None and not posTO and abs(posAction[1] - node.position) > 0.1:
                                 if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
                                     self.get_logger().info(f"Setting {name} to position control")
                                     node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
                                     node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                                node.set_position(self.posActions[name][1], 0, self.posActions[name][3])
-                                
-                            elif self.velActions[name] is not None and not velTO:
+                                node.set_position(posAction[1], 0, posAction[3])
+                                    
+                            elif velAction is not None and not velTO:
                                 if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
                                     self.get_logger().info(f"Setting {name} to velocity control")
                                     node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
                                     node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                                node.set_velocity(self.velActions[name][1])
+                                node.set_velocity(velAction[1])
                             else:
                                 if node.state != ODriveAxisState.IDLE:
                                     node.set_state_msg(ODriveAxisState.IDLE)
