@@ -1,4 +1,4 @@
-roboguard_actions:
+/actions:
   ros__parameters:
     tracks:
       left_joint_names: ['track_fl_j', 'track_rl_j']
@@ -8,7 +8,7 @@ roboguard_actions:
       wheel_separation: 0.175
       wheel_separation_multiplier: 10.0
       gear_ratio: 0.03333
-      max_speed: 58
+      max_speed: 58.0
 
     flippers:
       front_left_name: 'flipper_fl_j'
@@ -20,7 +20,7 @@ roboguard_actions:
       max_speed: 50.0
     
     diff_drive:
-      update_rate: 10
+      update_rate: 10.0
       odom_frame_id: odom
       base_frame_id: base_link
       pose_covariance_diagonal : [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]

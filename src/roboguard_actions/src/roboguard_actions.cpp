@@ -196,27 +196,49 @@ public:
         : Node("roboguard_actions")
     {
         // Declare parameters
-        leftJointNames = this->declare_parameter<std::vector<std::string>>("tracks.left_joint_names");
-        rightJointNames = this->declare_parameter<std::vector<std::string>>("tracks.right_joint_names");
-        wheelRadius = this->declare_parameter<double>("tracks.wheel_radius", 1.0);
-        wheelSeparation = this->declare_parameter<double>("tracks.wheel_separation", 1.0);
-        tracksGearRatio = this->declare_parameter<double>("tracks.gear_ratio", 1.0);
-        tracksMaxSpeed = this->declare_parameter<double>("tracks.max_speed", 1.0);
+        leftJointNames = this->declare_parameter("tracks.left_joint_names", leftJointNames).;
+        rightJointNames = this->declare_parameter("tracks.right_joint_names", rightJointNames);
+        wheelRadius = this->declare_parameter("tracks.wheel_radius", 1.0);
+        wheelSeparation = this->declare_parameter("tracks.wheel_separation", 1.0);
+        tracksGearRatio = this->declare_parameter("tracks.gear_ratio", 1.0);
+        tracksMaxSpeed = this->declare_parameter("tracks.max_speed", 1.0);
 
-        flipperFrontLeft = this->declare_parameter<std::string>("flippers.front_left_name");
-        flipperRearLeft = this->declare_parameter<std::string>("flippers.rear_left_name");
-        flipperFrontRight = this->declare_parameter<std::string>("flippers.front_right_name");
-        flipperRearRight = this->declare_parameter<std::string>("flippers.rear_right_name");
-        flipperGearRatio = this->declare_parameter<double>("flippers.gear_ratio", 1.0);
-        flipperMaxSpeed = this->declare_parameter<double>("flippers.max_speed", 1.0);
+        flipperFrontLeft = this->declare_parameter("flippers.front_left_name", "");
+        flipperRearLeft = this->declare_parameter("flippers.rear_left_name", "");
+        flipperFrontRight = this->declare_parameter("flippers.front_right_name", "");
+        flipperRearRight = this->declare_parameter("flippers.rear_right_name", "");
+        flipperGearRatio = this->declare_parameter("flippers.gear_ratio", 1.0);
+        flipperMaxSpeed = this->declare_parameter("flippers.max_speed", 1.0);
 
-        updateRate = this->declare_parameter<double>("diff_drive.update_rate");
-        odomFrameID = this->declare_parameter<std::string>("diff_drive.odom_frame_id");
-        baseFrameID = this->declare_parameter<std::string>("diff_drive.base_frame_id");
-        poseCovarianceDiagonal = this->declare_parameter<std::vector<double>>("diff_drive.pose_covariance_diagonal");
-        twistCovarianceDiagonal = this->declare_parameter<std::vector<double>>("diff_drive.twist_covariance_diagonal");
-        openLoop = this->declare_parameter<bool>("diff_drive.open_loop");
-        enableOdomTF = this->declare_parameter<bool>("diff_drive.enable_odom_tf");
+        updateRate = this->declare_parameter("diff_drive.update_rate", 0.0);
+        odomFrameID = this->declare_parameter("diff_drive.odom_frame_id", "");
+        baseFrameID = this->declare_parameter("diff_drive.base_frame_id", "");
+        poseCovarianceDiagonal = this->declare_parameter("diff_drive.pose_covariance_diagonal", poseCovarianceDiagonal);
+        twistCovarianceDiagonal = this->declare_parameter("diff_drive.twist_covariance_diagonal", twistCovarianceDiagonal);
+        openLoop = this->declare_parameter("diff_drive.open_loop", false);
+        enableOdomTF = this->declare_parameter("diff_drive.enable_odom_tf", false);
+
+        leftJointNames = this->get_parameter("tracks.left_joint_names");
+        rightJointNames = this->get_parameter("tracks.right_joint_names");
+        wheelRadius = this->get_parameter("tracks.wheel_radius");
+        wheelSeparation = this->get_parameter("tracks.wheel_separation");
+        tracksGearRatio = this->get_parameter("tracks.gear_ratio");
+        tracksMaxSpeed = this->get_parameter("tracks.max_speed");
+
+        flipperFrontLeft = this->get_parameter("flippers.front_left_name");
+        flipperRearLeft = this->get_parameter("flippers.rear_left_name");
+        flipperFrontRight = this->get_parameter("flippers.front_right_name");
+        flipperRearRight = this->get_parameter("flippers.rear_right_name");
+        flipperGearRatio = this->get_parameter("flippers.gear_ratio");
+        flipperMaxSpeed = this->get_parameter("flippers.max_speed");
+
+        updateRate = this->get_parameter("diff_drive.update_rate");
+        odomFrameID = this->get_parameter("diff_drive.odom_frame_id");
+        baseFrameID = this->get_parameter("diff_drive.base_frame_id");
+        poseCovarianceDiagonal = this->get_parameter("diff_drive.pose_covariance_diagonal");
+        twistCovarianceDiagonal = this->get_parameter("diff_drive.twist_covariance_diagonal");
+        openLoop = this->get_parameter("diff_drive.open_loop");
+        enableOdomTF = this->get_parameter("diff_drive.enable_odom_tf");
 
         // Create subcriptions
         enableSub = this->create_subscription<Bool>(

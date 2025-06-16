@@ -20,7 +20,7 @@ def generate_launch_description():
 
     actions_node = Node(
         package="roboguard_actions",
-        executable="actions",
+        executable="actions_node",
         name="actions",
         output="screen",
         parameters=[actions_config_path],
