@@ -173,7 +173,7 @@ class ODriveControl(Node):
                 for name, nodeID, currentLimit in zip(
                     self.jointNames.value, self.jointCanIDs.value, self.continuousCurrentLimits.value)
         }
-        self.jointRatios: Dict[str, float] = {name: ratio for name, ratio in zip(self.jointNames, self.gearRatios)}
+        self.jointRatios: Dict[str, float] = {name: ratio for name, ratio in zip(self.jointNames.value, self.gearRatios.value)}
         
         self.reader = can.AsyncBufferedReader()
             
