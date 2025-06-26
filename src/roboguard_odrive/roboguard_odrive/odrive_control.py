@@ -115,12 +115,24 @@ class ODriveControl(Node):
             8.0,
             8.0,
         ]
+        gearRatios = [
+            1/540,
+            1/540,
+            1/540,
+            1/540,
+            1/30,
+            1/30,
+            1/30,
+            1/30,
+        ]
         self.jointNames = self.declare_parameter(
             'joint_names', joints, ParameterDescriptor(type=ParameterType.PARAMETER_STRING_ARRAY))
         self.jointCanIDs = self.declare_parameter(
             'joint_can_ids', joint_ids, ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER_ARRAY))
         self.continuousCurrentLimits = self.declare_parameter(
             'continuous_current_limits', continuousCurrents, ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER_ARRAY))
+        self.gearRatios = self.declare_parameter(
+            'gear_ratios', gearRatios, ParameterDescriptor(type=ParameterType.PARAMETER_DOUBLE_ARRAY))
         self.currentLimitTime: rclpy.Parameter = self.declare_parameter(
             'peak_current_time', 0.1, ParameterDescriptor(type=ParameterType.PARAMETER_DOUBLE, description='Max time to be over continuous current'))
         self.publishRate: rclpy.Parameter = self.declare_parameter(
@@ -138,7 +150,7 @@ class ODriveControl(Node):
 
         # Create publishers
         self.jointStatePub = self.create_publisher(
-            JointState, 'joint_states', 1)
+            JointState, 'odrive/joint_states', 1)
         self.diagnosticsPub = self.create_publisher(
             DiagnosticArray, 'diagnostics', 1)
 
@@ -158,8 +170,10 @@ class ODriveControl(Node):
                     self.currentLimitTime.value,
                     self._onDriveStatus
                 )
-                for name, nodeID, currentLimit in zip(self.jointNames.value, self.jointCanIDs.value, self.continuousCurrentLimits.value)
+                for name, nodeID, currentLimit in zip(
+                    self.jointNames.value, self.jointCanIDs.value, self.continuousCurrentLimits.value)
         }
+        self.jointRatios: Dict[str, float] = {name: ratio for name, ratio in zip(self.jointNames, self.gearRatios)}
         
         self.reader = can.AsyncBufferedReader()
             
@@ -218,7 +232,7 @@ class ODriveControl(Node):
             position = rad2rev(position)
             velocity = rad2rev(velocity)
             # self.posActions[name] = (Time.from_msg(trajectory.header.stamp), position, velocity, effort)
-            self.posActions[name] = (Time.from_msg(self._getHeader().stamp), position, velocity, effort)
+            self.posActions[name] = (self.get_clock().now(), position, velocity, effort)
 
     def onJointJogMsg(self, jog: JointJog):
         # Velocity control
@@ -233,7 +247,7 @@ class ODriveControl(Node):
             velocity = rad2rev(velocity)
 
             # self.velActions[name] = (Time.from_msg(jog.header.stamp), velocity)
-            self.velActions[name] = (Time.from_msg(self._getHeader().stamp), velocity)
+            self.velActions[name] = (self.get_clock().now(), velocity)
 
     def onEnableMsg(self, enable: Bool):
         self.enable = enable.data
@@ -306,6 +320,11 @@ class ODriveControl(Node):
             'max': self.writeLoopStats.max(),
             'median': self.writeLoopStats.mean(),
             'var': self.writeLoopStats.variance(),
+            'expected': errorThresh,
+            'avg_rate': 1 / self.writeLoopStats.mean(),
+            'min_rate': 1 / self.writeLoopStats.min(),
+            'max_rate': 1 / self.writeLoopStats.max(),
+            'expected_rate': 1 / errorThresh,
         }
         
         res.message = ' '.join([f'{name}: {niceFloat(value)}' for name, value in values.items()])
@@ -386,8 +405,8 @@ class ODriveControl(Node):
         effs: List[float] = []
         for name, node in self.nodes.items():
             names.append(name)
-            pos.append(rev2rad(node.position))
-            vels.append(rev2rad(node.velocity))
+            pos.append(rev2rad(node.position) * self.jointRatios[name])
+            vels.append(rev2rad(node.velocity) * self.jointRatios[name])
             effs.append(node.torque)
         state = JointState(
             header=self._getHeader(),
@@ -418,6 +437,7 @@ class ODriveControl(Node):
         notifier.stop()
     
     async def writeLoop(self):
+        # The code of this method is ugly, both datetime and Time are used which is very confusing
         posTimedOut = {name: True for name in self.nodes.keys()}
         velTimedOut = {name: True for name in self.nodes.keys()}
         lastOkTime = {name: datetime.now() for name in self.nodes.keys()}
@@ -453,14 +473,14 @@ class ODriveControl(Node):
                                     self.get_logger().info(f"Setting {name} to position control")
                                     node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
                                     node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                                node.set_position(self.posActions[name][1], 0, self.posActions[name][3])
+                                node.set_position(self.posActions[name][1] / self.jointRatios[name], 0, self.posActions[name][3])
                                 
                             elif self.velActions[name] is not None and not velTO:
                                 if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
                                     self.get_logger().info(f"Setting {name} to velocity control")
                                     node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
                                     node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                                node.set_velocity(self.velActions[name][1])
+                                node.set_velocity(self.velActions[name][1] / self.jointRatios[name])
                             else:
                                 if node.state != ODriveAxisState.IDLE:
                                     node.set_state_msg(ODriveAxisState.IDLE)

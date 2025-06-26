@@ -201,16 +201,6 @@ class ActionsNode(Node):
             ParameterDescriptor(description="Distance between contact points")
         )
         self.wheelSeparationMultiplier = self.declare_parameter('tracks.wheel_separation_multiplier',  10.0)
-        self.tracksGearRatio = self.declare_parameter(
-            'tracks.gear_ratio',
-            1/30,
-            ParameterDescriptor(description="Gearbox ratio for the tracks")
-        )
-        self.tracksMaxSpeed = self.declare_parameter(
-            'tracks.max_speed',
-            58,
-            ParameterDescriptor(description="Max motor speed in rev/s")
-        )
         
         # Flippers params
         self.flipperFrontLeft = self.declare_parameter('flippers.front_left_name', 'flipper_fl_j')
@@ -221,7 +211,7 @@ class ActionsNode(Node):
         self.flipperMaxSpeed = self.declare_parameter('flippers.max_speed', 50.0)
         
         # Diff drive params
-        self.updateRate = self.declare_parameter('diff_drive.update_rate',  20)
+        self.updateRate = self.declare_parameter('diff_drive.update_rate',  20.0)
         self.odomFrameID = self.declare_parameter('diff_drive.odom_frame_id',  'odom')
         self.baseFrameID = self.declare_parameter('diff_drive.base_frame_id',  'base_link')
         self.poseCovarianceDiagonal = self.declare_parameter('diff_drive.pose_covariance_diagonal',  [0.001, 0.001, 0.001, 0.001, 0.001, 0.01])
@@ -232,8 +222,8 @@ class ActionsNode(Node):
         # Read params
         self.odom.setWheelParams(
             self.wheelSeparation.value * self.wheelSeparationMultiplier.value,
-            self.wheelRadius.value * self.tracksGearRatio.value,
-            self.wheelRadius.value * self.tracksGearRatio.value
+            self.wheelRadius.value,
+            self.wheelRadius.value
         )
         
         self.odometryMessage: Odometry = Odometry()
@@ -313,7 +303,15 @@ class ActionsNode(Node):
         return Header(frame_id=self.get_name(), stamp=self.get_clock().now().to_msg())
         
     def mps2tracks(self, speed: Meters) -> Radians:
-        return speed / self.wheelRadius.value / self.tracksGearRatio.value
+        """Converts m/s to tracks rad/s
+
+        Args:
+            speed (Meters): Linear velocity in m/s
+
+        Returns:
+            Radians: Angular velocity in rad/s
+        """
+        return speed / self.wheelRadius.value
     
     def onEnable(self, enable: Bool):
         # Here, enable is not time critical, roboguard_odrive will read the enable topic as well
@@ -404,7 +402,7 @@ class ActionsNode(Node):
             #if act:
             traj.joint_names.append(self.posToJoint[name])
             point.positions.append(self.flipperSetPos[name])
-            point.velocities.append(rev2rad(self.flipperMaxSpeed.value * abs(commands[name])))
+            point.velocities.append(rev2rad((self.flipperMaxSpeed.value / self.flipperRatio) * abs(commands[name])))
             point.accelerations.append(0)
             point.effort.append(0)
         
