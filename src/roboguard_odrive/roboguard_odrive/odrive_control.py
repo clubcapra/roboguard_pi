@@ -25,7 +25,8 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from control_msgs.msg import JointJog
 from sensor_msgs.msg import JointState
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
-from std_msgs.msg import Header, Bool
+from std_msgs.msg import Header, Bool, Empty
+from std_srvs.srv import SetBool
 
 # local imports
 from odrive_types import ODriveAxisState, ODriveControlMode, ODriveInputMode, get_error_description
@@ -135,6 +136,9 @@ class ODriveControl(Node):
         JointJog, 'jog', self.onJointJogMsg, 1)
         self.enableSub = self.create_subscription(Bool, 'enable', self.onEnableMsg, 1)
         self.estopSub = self.create_subscription(Bool, 'estop', self.onEStopMsg, 1)
+        
+        # Create services
+        self.ackPeakCurrent = self.create_service(SetBool, 'ack_peak_current', self.onAckPeakCurrent)
 
         # Create publishers
         self.jointStatePub = self.create_publisher(
@@ -240,6 +244,10 @@ class ODriveControl(Node):
         
     def onEStopMsg(self, estop: Bool):
         self.estop = estop.data
+        
+    def onAckPeakCurrent(self, value: Bool) -> Empty:
+        for node in self.nodes.values():
+            node.currentPeakError = value.data
 
     def canDiagnostic(self) -> DiagnosticStatus:
         res = DiagnosticStatus()
