@@ -145,6 +145,8 @@ class ODriveControl(Node):
             JointState, 'joint_states', 1)
         self.diagnosticsPub = self.create_publisher(
             DiagnosticArray, 'diagnostics', 1)
+        self.overCurrentPub = self.create_publisher(
+            Bool, 'over_current', 1)
 
         # Create timers
         self.publishTimer = self.create_timer(
@@ -408,6 +410,7 @@ class ODriveControl(Node):
 
     def onDiagnosticTimer(self):
         self.sendDiagnostics()
+        self.overCurrentPub.publish(Bool(data=any([n.currentPeakError for n in self.nodes.values()])))
         
     async def _readLoop(self, node: ODriveCanNode):
         while True:
