@@ -247,7 +247,7 @@ class ODriveControl(Node):
     def onEStopMsg(self, estop: Bool):
         self.estop = estop.data
         
-    def onAckPeakCurrent(self, value: Bool) -> Empty:
+    def onAckPeakCurrent(self, value: Bool, res: Empty) -> Empty:
         for node in self.nodes.values():
             node.currentPeakError = value.data
         return Empty()
