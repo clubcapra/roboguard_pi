@@ -6,7 +6,7 @@ roboguard_actions:
 
       wheel_radius: 0.1075
       wheel_separation: 0.175
-      wheel_separation_multiplier: 10.0
+      wheel_separation_multiplier: 5.0
       gear_ratio: 0.03333
       max_speed: 58
 

@@ -28,12 +28,12 @@ odrive_control:
       #10.0,
       10.0,
       #10.0,
-      8.0,
-      8.0,
-      8.0,
-      8.0,
+      10.0,
+      10.0,
+      10.0,
+      10.0,
     ]
-    peak_current_time: 0.1
+    peak_current_time: 1.0
 
     publish_rate: 20.0
     can_write_rate: 10.0
