@@ -250,6 +250,7 @@ class ODriveControl(Node):
     def onAckPeakCurrent(self, value: Bool) -> Empty:
         for node in self.nodes.values():
             node.currentPeakError = value.data
+        return Empty()
 
     def canDiagnostic(self) -> DiagnosticStatus:
         res = DiagnosticStatus()
