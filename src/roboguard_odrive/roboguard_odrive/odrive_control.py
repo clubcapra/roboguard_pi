@@ -136,9 +136,8 @@ class ODriveControl(Node):
         JointJog, 'jog', self.onJointJogMsg, 1)
         self.enableSub = self.create_subscription(Bool, 'enable', self.onEnableMsg, 1)
         self.estopSub = self.create_subscription(Bool, 'estop', self.onEStopMsg, 1)
+        self.ackPeakCurrentSub = self.create_subscription(Bool, 'ack_peak_current', self.onAckPeakCurrent, 1)
         
-        # Create services
-        self.ackPeakCurrent = self.create_service(SetBool, 'ack_peak_current', self.onAckPeakCurrent)
 
         # Create publishers
         self.jointStatePub = self.create_publisher(
@@ -247,10 +246,9 @@ class ODriveControl(Node):
     def onEStopMsg(self, estop: Bool):
         self.estop = estop.data
         
-    def onAckPeakCurrent(self, value: Bool, res: Empty) -> Empty:
+    def onAckPeakCurrent(self, value: Bool):
         for node in self.nodes.values():
-            node.currentPeakError = value.data
-        return Empty()
+            node.currentPeakError = not value.data
 
     def canDiagnostic(self) -> DiagnosticStatus:
         res = DiagnosticStatus()
