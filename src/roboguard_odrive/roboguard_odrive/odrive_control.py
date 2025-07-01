@@ -244,19 +244,19 @@ class ODriveControl(Node):
         self.estop = estop.data
 
     def _canErrorInfo(self, error:CanError) -> Tuple[DiagnosticStatus, str]:
-        if self.canHandler.error == CanError.FATAL_ERROR:
+        if error == CanError.FATAL_ERROR:
             level = DiagnosticStatus.ERROR
             message = 'Fatal error, check configuration'
-        elif self.canHandler.error == CanError.INIT_ERROR:
+        elif error == CanError.INIT_ERROR:
             level = DiagnosticStatus.ERROR
             message = 'Initialization error, is the can interface up?'
-        elif self.canHandler.error == CanError.OPERATION_ERROR:
+        elif error == CanError.OPERATION_ERROR:
             level = DiagnosticStatus.ERROR
             message = 'Operation error, read or write, failed. Is the EStop button pressed?'
-        elif self.canHandler.error == CanError.TIMEOUT:
+        elif error == CanError.TIMEOUT:
             level = DiagnosticStatus.WARN
             message = 'Timed out'
-        elif self.canHandler.error == CanError.NONE:
+        elif error == CanError.NONE:
             if self.canHandler.status == CanStatus.INITIALIZED:
                 level = DiagnosticStatus.OK
                 message = 'Ok'
@@ -274,7 +274,7 @@ class ODriveControl(Node):
                 message = f'Unhandled status, status code: {self.canHandler.status}'
         else:
             level = DiagnosticStatus.ERROR
-            message = f'Unhandled error, error code: {self.canHandler.error}'
+            message = f'Unhandled error, error code: {error}'
         return level, message
 
     def canDiagnostic(self) -> DiagnosticStatus:
