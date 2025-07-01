@@ -341,11 +341,11 @@ class ODriveControl(Node):
                 level=DiagnosticStatus.ERROR,
                 message='Disconnected'
             )
-        if node.currentPeakError:
-            return DiagnosticStatus(
-                level=DiagnosticStatus.ERROR,
-                message="PEAK CURRENT REACHED"
-            )
+        # if node.currentPeakError:
+        #     return DiagnosticStatus(
+        #         level=DiagnosticStatus.ERROR,
+        #         message="PEAK CURRENT REACHED"
+        #     )
         if node.error != 0:
             return DiagnosticStatus(
                 level=DiagnosticStatus.ERROR,
