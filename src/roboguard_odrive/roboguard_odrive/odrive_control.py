@@ -79,7 +79,7 @@ class ODriveControl(Node):
         self._lastEStop = self.get_clock().now()
         self._estop = True
         self.lastError:CanError = CanError.NONE
-        self.instantError:CanError = CanError.
+        self.instantError:CanError = CanError.NONE
         
         # Declare parameters
         self.channel = self.declare_parameter(
