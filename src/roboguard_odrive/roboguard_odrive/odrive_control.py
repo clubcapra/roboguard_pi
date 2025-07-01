@@ -324,6 +324,11 @@ class ODriveControl(Node):
             'max': self.writeLoopStats.max(),
             'median': self.writeLoopStats.mean(),
             'var': self.writeLoopStats.variance(),
+            'expected': errorThresh,
+            'avg_rate': 1 / self.writeLoopStats.mean(),
+            'min_rate': 1 / self.writeLoopStats.min(),
+            'max_rate': 1 / self.writeLoopStats.max(),
+            'expected_rate': 1 / errorThresh,
         }
         
         res.message = ' '.join([f'{name}: {niceFloat(value)}' for name, value in values.items()])
