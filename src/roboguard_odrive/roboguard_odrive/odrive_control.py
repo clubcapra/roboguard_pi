@@ -412,7 +412,7 @@ class ODriveControl(Node):
             names.append(name)
             pos.append(rev2rad(node.position))
             vels.append(rev2rad(node.velocity))
-            effs.append(node.torque)
+            effs.append(node.current)
         state = JointState(
             header=self._getHeader(),
             name=names,
