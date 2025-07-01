@@ -78,6 +78,8 @@ class ODriveControl(Node):
         self._enable = False
         self._lastEStop = self.get_clock().now()
         self._estop = True
+        self.lastError:CanError = CanError.NONE
+        self.instantError:CanError = CanError.
         
         # Declare parameters
         self.channel = self.declare_parameter(
@@ -241,44 +243,60 @@ class ODriveControl(Node):
     def onEStopMsg(self, estop: Bool):
         self.estop = estop.data
 
+    def _canErrorInfo(self, error:CanError) -> Tuple[DiagnosticStatus, str]:
+        if self.canHandler.error == CanError.FATAL_ERROR:
+            level = DiagnosticStatus.ERROR
+            message = 'Fatal error, check configuration'
+        elif self.canHandler.error == CanError.INIT_ERROR:
+            level = DiagnosticStatus.ERROR
+            message = 'Initialization error, is the can interface up?'
+        elif self.canHandler.error == CanError.OPERATION_ERROR:
+            level = DiagnosticStatus.ERROR
+            message = 'Operation error, read or write, failed. Is the EStop button pressed?'
+        elif self.canHandler.error == CanError.TIMEOUT:
+            level = DiagnosticStatus.WARN
+            message = 'Timed out'
+        elif self.canHandler.error == CanError.NONE:
+            if self.canHandler.status == CanStatus.INITIALIZED:
+                level = DiagnosticStatus.OK
+                message = 'Ok'
+            elif self.canHandler.status == CanStatus.UNINITIALIZED:
+                level = DiagnosticStatus.WARN
+                message = 'Uninitialized'
+            elif self.canHandler.status == CanStatus.SHUTDOWN:
+                level = DiagnosticStatus.ERROR
+                message = 'Bus has been shutdown, maybe the node is stopping'
+            elif self.canHandler.status == CanStatus.ERROR:
+                level = DiagnosticStatus.ERROR
+                message = "This shouldn't happen, errors should be managed outside this block"
+            else:
+                level = DiagnosticStatus.ERROR
+                message = f'Unhandled status, status code: {self.canHandler.status}'
+        else:
+            level = DiagnosticStatus.ERROR
+            message = f'Unhandled error, error code: {self.canHandler.error}'
+        return level, message
+
     def canDiagnostic(self) -> DiagnosticStatus:
         res = DiagnosticStatus()
         res.hardware_id = self.channel.value
         res.name = 'Can status'
-        if self.canHandler.error == CanError.FATAL_ERROR:
-            res.level = DiagnosticStatus.ERROR
-            res.message = 'Fatal error, check configuration'
-        elif self.canHandler.error == CanError.INIT_ERROR:
-            res.level = DiagnosticStatus.ERROR
-            res.message = 'Initialization error, is the can interface up?'
-        elif self.canHandler.error == CanError.OPERATION_ERROR:
-            res.level = DiagnosticStatus.ERROR
-            res.message = 'Operation error, read or write, failed. Is the EStop button pressed?'
-        elif self.canHandler.error == CanError.TIMEOUT:
-            res.level = DiagnosticStatus.WARN
-            res.message = 'Timed out'
-        elif self.canHandler.error == CanError.NONE:
-            if self.canHandler.status == CanStatus.INITIALIZED:
-                res.level = DiagnosticStatus.OK
-                res.message = 'Ok'
-            elif self.canHandler.status == CanStatus.UNINITIALIZED:
-                res.level = DiagnosticStatus.WARN
-                res.message = 'Uninitialized'
-            elif self.canHandler.status == CanStatus.SHUTDOWN:
-                res.level = DiagnosticStatus.ERROR
-                res.message = 'Bus has been shutdown, maybe the node is stopping'
-            elif self.canHandler.status == CanStatus.ERROR:
-                res.level = DiagnosticStatus.ERROR
-                res.message = "This shouldn't happen, errors should be managed outside this block"
-            else:
-                res.level = DiagnosticStatus.ERROR
-                res.message = f'Unhandled status, status code: {self.canHandler.status}'
-        else:
-            res.level = DiagnosticStatus.ERROR
-            res.message = f'Unhandled error, error code: {self.canHandler.error}'
+        
+        level, message = self._canErrorInfo(self.canHandler.error)
+        res.level = level
+        res.message = message
+        
+        if self.canHandler.error != CanError.NONE:
+            self.lastError = self.canHandler.error
+        
+        if self.instantError != CanError.NONE and self.instantError != self.lastError:
+            self.lastError = self.instantError
+            self.instantError = CanError.NONE
 
         values: Dict[str, str] = {
             'status': self.canHandler.status.name,
+            'error': message,
+            'last_error': self._canErrorInfo(self.lastError)[1],
             'inner_state': self.canHandler.state.name,
             'channel_info': self.canHandler.channel_info,
         }
@@ -362,6 +380,7 @@ class ODriveControl(Node):
             yield res
 
     def _onCanError(self, error: CanError):
+        self.instantError = error
         self.sendDiagnostics()
         
     def _onDriveStatus(self):
@@ -434,44 +453,44 @@ class ODriveControl(Node):
                         node.clear_errors_msg()
                     else:
                         lastOkTime[name] = startTime
-                    if self.estop or node.currentPeakError:
-                        node.call_estop()
-                        node.feed_watchdog_msg()
-                    else:
-                        if self.enable:
-                            now = self.get_clock().now()
-                            nowt = datetime.now()
-                            posAction = self.posActions[name]
-                            velAction = self.velActions[name]
-                            posTO = False if posAction is None else (now - posAction[0] > Duration(nanoseconds=0.5*S_TO_NS))
-                            velTO = False if velAction is None else (now - velAction[0] > Duration(nanoseconds=0.5*S_TO_NS))
-                            if posTO and not posTimedOut[name]:
-                                self.get_logger().warn(f"Node: {name} timed out pos")
-                            if velTO and not velTimedOut[name]:
-                                self.get_logger().warn(f"Node: {name} timed out vel")
-                            posTimedOut[name] = posTO
-                            velTimedOut[name] = velTO
-                            if posAction is not None and not posTO and abs(posAction[1] - node.position) > 0.1:
-                                if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
-                                    self.get_logger().info(f"Setting {name} to position control")
-                                    node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
-                                    node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                                node.set_position(posAction[1], 0, posAction[3])
-                                    
-                            elif velAction is not None and not velTO:
-                                if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
-                                    self.get_logger().info(f"Setting {name} to velocity control")
-                                    node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
-                                    node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
-                                node.set_velocity(velAction[1])
-                            else:
-                                if node.state != ODriveAxisState.IDLE:
-                                    node.set_state_msg(ODriveAxisState.IDLE)
-                                node.feed_watchdog_msg()
+                    # if self.estop or node.currentPeakError:
+                    #     node.call_estop()
+                    #     node.feed_watchdog_msg()
+                    # else:
+                    if self.enable:
+                        now = self.get_clock().now()
+                        nowt = datetime.now()
+                        posAction = self.posActions[name]
+                        velAction = self.velActions[name]
+                        posTO = False if posAction is None else (now - posAction[0] > Duration(nanoseconds=0.5*S_TO_NS))
+                        velTO = False if velAction is None else (now - velAction[0] > Duration(nanoseconds=0.5*S_TO_NS))
+                        if posTO and not posTimedOut[name]:
+                            self.get_logger().warn(f"Node: {name} timed out pos")
+                        if velTO and not velTimedOut[name]:
+                            self.get_logger().warn(f"Node: {name} timed out vel")
+                        posTimedOut[name] = posTO
+                        velTimedOut[name] = velTO
+                        if posAction is not None and not posTO and abs(posAction[1] - node.position) > 0.1:
+                            if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                self.get_logger().info(f"Setting {name} to position control")
+                                node.set_controller_mode(ODriveControlMode.MODE_POSITION_CONTROL, ODriveInputMode.INPUT_POS_FILTER)
+                                node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
+                            node.set_position(posAction[1], 0, posAction[3])
+                                
+                        elif velAction is not None and not velTO:
+                            if node.state != ODriveAxisState.CLOSED_LOOP_CONTROL:
+                                self.get_logger().info(f"Setting {name} to velocity control")
+                                node.set_controller_mode(ODriveControlMode.MODE_VELOCITY_CONTROL, ODriveInputMode.INPUT_VEL_RAMP)
+                                node.set_state_msg(ODriveAxisState.CLOSED_LOOP_CONTROL)
+                            node.set_velocity(velAction[1])
                         else:
                             if node.state != ODriveAxisState.IDLE:
                                 node.set_state_msg(ODriveAxisState.IDLE)
                             node.feed_watchdog_msg()
+                    else:
+                        if node.state != ODriveAxisState.IDLE:
+                            node.set_state_msg(ODriveAxisState.IDLE)
+                        node.feed_watchdog_msg()
                 newNow = datetime.now()
                 runtime = newNow - startTime
                 self.writeLoopStats.push(runtime.total_seconds())

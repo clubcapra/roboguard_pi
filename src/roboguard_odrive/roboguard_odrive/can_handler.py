@@ -102,6 +102,7 @@ class CanHandler(can.BusABC):
         self._recursion = True
         lastError = self.error
         
+        
         try:
             res = func(*args, **kwargs)
             self.errorCount = 0
@@ -163,7 +164,7 @@ class CanHandler(can.BusABC):
             pass
 
         self.logger.info("Done")
-        self.error = CanError.NONE
+        # self.error = CanError.NONE
         return bus
 
     @property
