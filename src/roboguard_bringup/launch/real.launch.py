@@ -62,6 +62,6 @@ def generate_launch_description():
             shutdown,
             odrive,
             actions,
-            mapper,
+            #mapper,
         ]
     )
