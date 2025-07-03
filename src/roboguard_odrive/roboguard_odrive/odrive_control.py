@@ -177,8 +177,8 @@ class ODriveControl(Node):
         if self.shuttingDown or self.estop:
             return False
         now = self.get_clock().now()
-        if (now - self._lastEnable) > Duration(nanoseconds=int(0.5 * S_TO_NS)):
-            # self.get_logger().info("Too long since enable")
+        if (now - self._lastEnable) > Duration(nanoseconds=int(0.75 * S_TO_NS)):
+            self.get_logger().info("Too long since enable")
             return False
         return self._enable
     
@@ -192,8 +192,8 @@ class ODriveControl(Node):
         if self.shuttingDown:
             return True
         now = self.get_clock().now()
-        if (now - self._lastEStop) > Duration(nanoseconds=int(0.5 * S_TO_NS)):
-            # self.get_logger().info("Too long since estop")
+        if (now - self._lastEStop) > Duration(nanoseconds=int(0.75 * S_TO_NS)):
+            self.get_logger().info("Too long since estop")
             return True
         return self._estop
     
