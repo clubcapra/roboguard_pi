@@ -28,7 +28,7 @@ from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
 from std_msgs.msg import Header, Bool
 
 # local imports
-from odrive_types import ODriveAxisState, ODriveControlMode, ODriveInputMode, get_error_description
+from odrive_types import ODriveAxisState, ODriveControlMode, ODriveErrorCodes, ODriveInputMode, get_error_description
 from can_handler import CanError, CanHandler, CanStatus
 from odrive_can_node import ODriveCanNode
 from utils import dict2keyvalues, rad2rev, rev2rad, verifyLengthMatch, yesno
@@ -445,14 +445,22 @@ class ODriveControl(Node):
         posTimedOut = {name: True for name in self.nodes.keys()}
         velTimedOut = {name: True for name in self.nodes.keys()}
         lastOkTime = {name: datetime.now() for name in self.nodes.keys()}
+        lastConnectedTime = datetime.now()
         nextRun = datetime.now() + timedelta(seconds=1/self.canWriteRate.value)
         
         while True:
             try:
                 startTime = datetime.now()
+                if all([not n.connected and n.error == 0 for n in self.nodes.values()]):
+                    self.get_logger().error("Potentially internal can error (socketcan uncaught error)")
+                    if lastConnectedTime + timedelta(seconds=3) > startTime:
+                        self.canHandler.restartCan()
+                else:
+                    lastConnectedTime = datetime.now()
+                    
                 for name, node in self.nodes.items():
                     if node.error != 0:
-                        self.get_logger().info(f"Node: {name} {node.error.name}")
+                        self.get_logger().error(f"Node: {name} {node.error.name}")
                         if lastOkTime[name] + timedelta(seconds=3) > startTime:
                             self.canHandler.restartCan()
                         node.clear_errors_msg()
@@ -464,7 +472,6 @@ class ODriveControl(Node):
                     # else:
                     if self.enable:
                         now = self.get_clock().now()
-                        nowt = datetime.now()
                         posAction = self.posActions[name]
                         velAction = self.velActions[name]
                         posTO = False if posAction is None else (now - posAction[0] > Duration(nanoseconds=0.5*S_TO_NS))
