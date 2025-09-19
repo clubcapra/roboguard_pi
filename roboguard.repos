@@ -11,3 +11,7 @@ repositories:
     type: git
     url: https://github.com/micro-ROS/micro_ros_setup.git
     version: humble
+  better_odrive:
+    type: git
+    url: https://github.com/clubcapra/better_odrive.git
+    version: main
