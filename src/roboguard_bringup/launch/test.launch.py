@@ -7,22 +7,37 @@ from launch.actions import (
     RegisterEventHandler,
     ExecuteProcess,
     TimerAction,
+    DeclareLaunchArgument,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
-from launch.event_handlers import OnProcessExit, OnShutdown
+from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    # Declare parameters
+    use_mock_hardware_dec = DeclareLaunchArgument("use_mock_hardware", default_value="false")
+    use_mock_hardware = LaunchConfiguration("use_mock_hardware")
+    
     # Get the launch directory
     pkg_roboguard_description = get_package_share_directory("roboguard_description")
+    
 
     # Get the URDF file
     urdf_path = os.path.join(pkg_roboguard_description, "urdf", "rove.base.urdf.xacro")
-    robot_desc = Command(["xacro ", urdf_path])
+    robot_desc = Command(
+        [
+            PathJoinSubstitution([FindExecutable(name="xacro")]),
+            " ",
+            PathJoinSubstitution([urdf_path]),
+            " ",
+            "use_mock_hardware:=",
+            use_mock_hardware,
+        ]
+    )
 
     # Takes the description and joint angles as inputs and publishes
     # the 3D poses of the robot links
@@ -48,6 +63,7 @@ def generate_launch_description():
             "roboguard_controllers.yaml",
         ]
     )
+    
 
     control_node = Node(
         package="controller_manager",
@@ -114,8 +130,9 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            start_can_cmd,
-            shutdown,
+            use_mock_hardware_dec,
+            # start_can_cmd,
+            # shutdown,
             robot_state_publisher,
             control_node,
             *delayed_controller_nodes,

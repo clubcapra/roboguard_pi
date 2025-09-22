@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
 <robot name="rove" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:arg name="use_mock_hardware" default="false"/>
+
     <material name="rubber_color">
         <color rgba="0.1 0.1 0.1 1.0" />
     </material>
@@ -17,14 +19,14 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <cube size="1 0.6 0.1" />
+                <box size="1 0.6 0.1" />
             </geometry>
             <material name="frame_color" />
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <cube size="1 0.6 0.1" />
+                <box size="1 0.6 0.1" />
             </geometry>
         </collision>
         <inertial>
@@ -35,8 +37,12 @@
     </link>
 
     <!-- Put these at -1 to mock the motors if working without the motors -->
-    <!-- <xacro:odrive_control fl_id="21" rl_id="22" fr_id="23" rr_id="24" /> -->
-    <xacro:odrive_control fl_id="21" rl_id="-1" fr_id="-1" rr_id="-1" />
+    <xacro:if value="$(arg use_mock_hardware)">
+        <xacro:odrive_control fl_id="-1" rl_id="-1" fr_id="-1" rr_id="-1" />
+    </xacro:if>
+    <xacro:unless value="$(arg use_mock_hardware)">
+        <xacro:odrive_control fl_id="21" rl_id="22" fr_id="23" rr_id="24" />
+    </xacro:unless>
 
 
 

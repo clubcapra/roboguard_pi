@@ -32,27 +32,30 @@
     </xacro:macro>
 
     <xacro:macro name="odrive_control" params="fl_id:=21 rl_id:=22 fr_id:=23 rr_id:=24">
-        <ros2_control name="odrive_control" type="system">
-            <hardware>
-                <plugin>odrive_hardware_interface_plugin/BetterODriveHardwareInterface</plugin>
-                <!-- <plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin> -->
-                <param name="can">can0</param>
-            </hardware>
-            <xacro:rove_odrive_motor suffix="fl" id="${fl_id}"/>
-            <xacro:rove_odrive_motor suffix="rl" id="${rl_id}"/>
-            <xacro:rove_odrive_motor suffix="fr" id="${fr_id}"/>
-            <xacro:rove_odrive_motor suffix="rr" id="${rr_id}"/>
-        </ros2_control>
-        
-        <ros2_control name="fake_odrive_control" type="system">
-            <hardware>
-                <plugin>mock_components/GenericSystem</plugin>
-            </hardware>
-            <xacro:rove_fake_odrive_motor suffix="fl" id="${fl_id}"/>
-            <xacro:rove_fake_odrive_motor suffix="rl" id="${rl_id}"/>
-            <xacro:rove_fake_odrive_motor suffix="fr" id="${fr_id}"/>
-            <xacro:rove_fake_odrive_motor suffix="rr" id="${rr_id}"/>
-        </ros2_control>
+        <xacro:if value="${(fl_id != -1) and (rl_id != -1) and (fr_id != -1) and (rr_id != -1)}">
+            <ros2_control name="odrive_control" type="system">
+                <hardware>
+                    <plugin>odrive_hardware_interface_plugin/BetterODriveHardwareInterface</plugin>
+                    <!-- <plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin> -->
+                    <param name="can">can0</param>
+                </hardware>
+                <xacro:rove_odrive_motor suffix="fl" id="${fl_id}"/>
+                <xacro:rove_odrive_motor suffix="rl" id="${rl_id}"/>
+                <xacro:rove_odrive_motor suffix="fr" id="${fr_id}"/>
+                <xacro:rove_odrive_motor suffix="rr" id="${rr_id}"/>
+            </ros2_control>
+        </xacro:if>
+        <xacro:if value="${(fl_id == -1) or (rl_id == -1) or (fr_id == -1) or (rr_id == -1)}">
+            <ros2_control name="fake_odrive_control" type="system">
+                <hardware>
+                    <plugin>mock_components/GenericSystem</plugin>
+                </hardware>
+                <xacro:rove_fake_odrive_motor suffix="fl" id="${fl_id}"/>
+                <xacro:rove_fake_odrive_motor suffix="rl" id="${rl_id}"/>
+                <xacro:rove_fake_odrive_motor suffix="fr" id="${fr_id}"/>
+                <xacro:rove_fake_odrive_motor suffix="rr" id="${rr_id}"/>
+            </ros2_control>
+        </xacro:if>
     </xacro:macro>
 
 
