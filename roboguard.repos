@@ -14,4 +14,4 @@ repositories:
   better_odrive:
     type: git
     url: https://github.com/clubcapra/better_odrive.git
-    version: main
+    version: 643b87c3533a598512dd869a7ba38482b2d27539
