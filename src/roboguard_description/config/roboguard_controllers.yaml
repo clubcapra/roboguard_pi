@@ -1,5 +1,5 @@
 # This config file is used by ros2_control
-roboguard_controller_manager:
+controller_manager:
   ros__parameters:
     update_rate: 20  # Hz
 
@@ -15,14 +15,12 @@ roboguard_controller_manager:
 odrive_controller:
   ros__parameters:
     joint_names: ["track_fl_j"]
-    absolute_joint_names: []
+    # absolute_joint_names: []
 
 diff_drive_controller:
   ros__parameters:
-    # left_wheel_names: ["track_l_j"]
     right_wheel_names: ["track_rr_j", "track_fr_j"]
     left_wheel_names: ["track_fl_j", "track_rl_j"]
-    # right_wheel_names: ["track_fr_j"]
 
     wheel_separation: 0.230
     wheel_radius: 0.11

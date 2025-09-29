@@ -24,6 +24,7 @@ def generate_launch_description():
     
     # Get the launch directory
     pkg_roboguard_description = get_package_share_directory("roboguard_description")
+    pkg_roboguard_bringup = get_package_share_directory("roboguard_bringup")
     
 
     # Get the URDF file
@@ -58,7 +59,8 @@ def generate_launch_description():
     ###### ROS2 control ######
     robot_controllers = PathJoinSubstitution(
         [
-            FindPackageShare("roboguard_bringup"),
+            pkg_roboguard_description,
+            # pkg_roboguard_bringup,
             "config",
             "roboguard_controllers.yaml",
         ]
@@ -68,12 +70,8 @@ def generate_launch_description():
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        name="roboguard_controller_manager",
         output="both",
-        parameters=[
-            {"robot_description": robot_desc},
-            robot_controllers,
-        ]
+        parameters=[{"robot_description": robot_desc}, robot_controllers],
     )
     
     joint_state_broadcaster_spawner = Node(
@@ -82,7 +80,7 @@ def generate_launch_description():
         arguments=[
             "joint_state_broadcaster",
             "--controller-manager",
-            "/roboguard_controller_manager",
+            "/controller_manager",
         ],
     )
 
@@ -90,7 +88,7 @@ def generate_launch_description():
         robot_controller_spawner = Node(
             package="controller_manager",
             executable="spawner",
-            arguments=[node_name, "--controller-manager", "/roboguard_controller_manager"],
+            arguments=[node_name, "-c", "/controller_manager"],
         )
 
         # Delay start of robot_controller after `joint_state_broadcaster`
@@ -107,6 +105,13 @@ def generate_launch_description():
     delayed_controller_nodes = list(
         [create_controller_node(node_name) for node_name in controller_nodes]
     )
+    
+    # robot_state_pub_node = Node(
+    #     package="robot_state_publisher",
+    #     executable="robot_state_publisher",
+    #     output="both",
+    #     parameters=[robot_description],
+    # )
 
     start_can_cmd = ExecuteProcess(
         cmd=[[
@@ -135,6 +140,7 @@ def generate_launch_description():
             # shutdown,
             robot_state_publisher,
             control_node,
+            joint_state_broadcaster_spawner,
             *delayed_controller_nodes,
         ]
     )
