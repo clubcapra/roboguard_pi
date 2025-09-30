@@ -3,7 +3,9 @@
     <xacro:macro name="track_motor_control" params="suffix nodeid">
         <joint name="track_${suffix}_j">
             <param name="node_id">${nodeid}</param>
+            <command_interface name="position"/>
             <command_interface name="velocity"/>
+            <command_interface name="effort"/>
             <command_interface name="estop"/>
             <command_interface name="clear_errors_cmd"/>
             <state_interface name="position"/>
@@ -29,7 +31,9 @@
 
     <xacro:macro name="track_fake_motor_control" params="suffix">
         <joint name="track_${suffix}_j">
+            <command_interface name="position"/>
             <command_interface name="velocity"/>
+            <command_interface name="effort"/>
             <command_interface name="estop"/>
             <command_interface name="clear_errors_cmd"/>
             <state_interface name="position"/>
