@@ -6,21 +6,32 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-    diff_drive_controller:
-      type: diff_drive_controller/DiffDriveController
-
     odrive_controller:
       type: odrive_controller_interface/BetterODriveControllerInterface
+    
+    left_track_mirror:
+      type: torque_mirror_controller/TorqueMirrorControllerInterface
+
+    diff_drive_controller:
+      type: diff_drive_controller/DiffDriveController
+      reference_interfaces:
+        - left_track_mirror/velocity
 
 odrive_controller:
   ros__parameters:
     joint_names: ["track_fl_j"]
-    # absolute_joint_names: []
+    # absolute_position_names: ["track_fl_j"]
+
+left_track_mirror:
+  ros__parameters:
+    name: "left_track_mirror"
+    velocity_joint: "track_fl_j"
+    torque_mirrored_joints: ["track_rl_j"]
 
 diff_drive_controller:
   ros__parameters:
-    right_wheel_names: ["track_rr_j", "track_fr_j"]
-    left_wheel_names: ["track_fl_j", "track_rl_j"]
+    right_wheel_names: ["track_rr_j"]
+    left_wheel_names: ["left_track_mirror"]
 
     wheel_separation: 0.230
     wheel_radius: 0.11

@@ -53,7 +53,7 @@ def generate_launch_description():
     )
     
     # Controllers
-    controller_nodes = ["diff_drive_controller", "odrive_controller"]
+    controller_nodes = ["odrive_controller", "left_track_mirror", "diff_drive_controller"]
     # controller_nodes = ["diff_drive_controller"]
     
     ###### ROS2 control ######
@@ -84,7 +84,7 @@ def generate_launch_description():
         ],
     )
 
-    def create_controller_node(node_name: str):
+    def create_controller_node(node_name: str, after):
         robot_controller_spawner = Node(
             package="controller_manager",
             executable="spawner",
@@ -92,19 +92,24 @@ def generate_launch_description():
         )
 
         # Delay start of robot_controller after `joint_state_broadcaster`
-        delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = (
+        delay_robot_controller_spawner_after = (
             RegisterEventHandler(
                 event_handler=OnProcessExit(
-                    target_action=joint_state_broadcaster_spawner,
+                    target_action=after,
                     on_exit=[robot_controller_spawner],
                 )
             )
         )
-        return delay_robot_controller_spawner_after_joint_state_broadcaster_spawner
+        return delay_robot_controller_spawner_after, robot_controller_spawner
 
-    delayed_controller_nodes = list(
-        [create_controller_node(node_name) for node_name in controller_nodes]
-    )
+
+
+    delayed_controller_nodes = list()
+    last_spawner = joint_state_broadcaster_spawner
+    for controller in controller_nodes:
+        node, spawner = create_controller_node(controller, last_spawner)
+        delayed_controller_nodes.append(node)
+        last_spawner = spawner
     
     # robot_state_pub_node = Node(
     #     package="robot_state_publisher",
