@@ -53,7 +53,8 @@ def generate_launch_description():
     )
     
     # Controllers
-    controller_nodes = ["odrive_controller", "left_track_mirror", "diff_drive_controller"]
+    # controller_nodes = ["odrive_controller", "left_track_mirror", "diff_drive_controller"]
+    controller_nodes = ["odrive_controller", "diff_drive_controller"]
     # controller_nodes = ["diff_drive_controller"]
     
     ###### ROS2 control ######
