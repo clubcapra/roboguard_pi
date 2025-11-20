@@ -6,7 +6,7 @@ repositories:
   capra_control_msgs:
     type: git
     url: https://github.com/clubcapra/capra_control_msgs.git
-    version: master
+    version: new_controls
   micro_ros_setup/src/micro_ros_setup:
     type: git
     url: https://github.com/micro-ROS/micro_ros_setup.git
