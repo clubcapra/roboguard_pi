@@ -15,3 +15,7 @@ repositories:
     type: git
     url: https://github.com/clubcapra/better_odrive.git
     version: main
+  capra_joy_controls:
+    type: git
+    url: https://github.com/clubcapra/capra_joy_controls.git
+    version: main
