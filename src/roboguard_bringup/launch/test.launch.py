@@ -25,6 +25,7 @@ def generate_launch_description():
     # Get the launch directory
     pkg_roboguard_description = get_package_share_directory("roboguard_description")
     pkg_roboguard_bringup = get_package_share_directory("roboguard_bringup")
+    pkg_capra_joy_controls = get_package_share_directory("capra_joy_controls")
     
 
     # Get the URDF file
@@ -138,6 +139,13 @@ def generate_launch_description():
             on_shutdown=[stop_can_cmd]
         )
     )
+    
+    capra_joy_control_node = Node(
+        package="capra_joy_controls",
+        executable="joy_controls",
+        output="both",
+        parameters=[{"config": PathJoinSubstitution([pkg_capra_joy_controls, "config", "example_bindings.yaml"])}],
+    )
 
     return LaunchDescription(
         [
@@ -148,5 +156,6 @@ def generate_launch_description():
             control_node,
             joint_state_broadcaster_spawner,
             *delayed_controller_nodes,
+            capra_joy_control_node,
         ]
     )
