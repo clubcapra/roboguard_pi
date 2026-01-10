@@ -11,3 +11,7 @@
     coalesce_interval_ms: 50
     deadzone: 0.2
     sticky_buttons: false
+
+/enable_node:
+  ros__parameters:
+    button_index: 0 # A
