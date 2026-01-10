@@ -1,12 +1,24 @@
 repositories:
-  capra_actions_mapper:
+  better_odrive:
     type: git
-    url: https://github.com/clubcapra/capra_actions_mapper.git
-    version: master
+    url: git@github.com:clubcapra/better_odrive.git
+    version: bug-fix
   capra_control_msgs:
     type: git
-    url: https://github.com/clubcapra/capra_control_msgs.git
-    version: master
+    url: git@github.com:clubcapra/capra_control_msgs.git
+    version: new_controls
+  capra_joy_to_bool:
+    type: git
+    url: git@github.com:clubcapra/capra_joy_to_bool.git
+    version: main
+  capra_tank_twist:
+    type: git
+    url: git@github.com:clubcapra/capra_tank_twist.git
+    version: main
+  capra_teleop_mapper:
+    type: git
+    url: git@github.com:clubcapra/capra_teleop_mapper.git
+    version: humble
   micro_ros_setup/src/micro_ros_setup:
     type: git
     url: https://github.com/micro-ROS/micro_ros_setup.git
