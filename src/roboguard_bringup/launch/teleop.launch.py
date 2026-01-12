@@ -51,10 +51,10 @@ def generate_launch_description():
         name="scheme_mapper",
         output="screen",
         remappings=[
-            ("/scheme_mapper/joy1", "/rove/twist/joy"),
-            ("/scheme_mapper/joy2", "/rove/tank/joy"),
-            ("/sheme_mapper/joy_select", "/rove/teleop_select"),
-            ("/scheme_mapper/joy", "/rove/teleop_joy"),
+            ("/joy1", "/rove/twist/joy"),
+            ("/joy2", "/rove/tank/joy"),
+            ("/joy_select", "/rove/teleop_select"),
+            ("/joy", "/rove/joy"),
         ],
     )
     
@@ -82,6 +82,7 @@ def generate_launch_description():
         ],
     )
     
+    # Flipers control
     flippers_teleop = Node(
         package="capra_flippers_teleop",
         executable="flippers_teleop",
@@ -93,6 +94,7 @@ def generate_launch_description():
         ],
     )
 
+    # 
     enable_node = Node(
         package="capra_joy_to_bool",
         executable="joy_to_bool",
@@ -101,7 +103,7 @@ def generate_launch_description():
         parameters=[joy_config_file],
         remappings=[
             ("/enable_node/joy", "/rove/joy"),
-            ("/enable_node/bool", "/rove/tracks/enable"),
+            ("/enable_node/bool", "/rove/enable"),
         ],
     )
     
@@ -112,7 +114,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/estop_control/bool", "/rove/teleop/estop"),
+            ("/estop_control/joy", "/rove/joy"),
+            ("/estop_control/bool", "/rove/estop"),
         ],
     )
     

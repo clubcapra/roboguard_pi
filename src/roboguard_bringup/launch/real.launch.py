@@ -130,6 +130,27 @@ def generate_launch_description():
             on_shutdown=[stop_can_cmd]
         )
     )
+    
+    twist_mux = Node(
+        package="twist_mux",
+        executable="twist_mux",
+        output="screen",
+        parameters=[pkg_roboguard_bringup + "/config/twist_mux.yaml"],
+        remappings={
+            ("/cmd_vel_out", "/rove/cmd_vel"),
+            ("nav_vel", "/rove/nav/cmd_vel"),
+            ("twist_vel", "/rove/twist/cmd_vel"),
+            ("tank_vel", "/rove/tank/cmd_vel"),
+        },
+    )
+    
+    cmd_vel_relay = Node(
+        package="topic_tools",
+        executable="relay",
+        name="diff_drive_remap",
+        output="screen",
+        arguments=("/rove/cmd_vel", "/diff_drive_controller/cmd_vel_unstamped")
+    )
 
     return LaunchDescription(
         [
@@ -140,5 +161,7 @@ def generate_launch_description():
             control_node,
             joint_state_broadcaster_spawner,
             *delayed_controller_nodes,
+            twist_mux,
+            cmd_vel_relay,
         ]
     )
