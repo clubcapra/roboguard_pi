@@ -15,11 +15,14 @@ jobs:
     - name: Build docker compose
       run: |
         docker compose build --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g)
+    - name: List packages
+      run: |
+        docker compose run devcontainer bash -c "tree -L 3 ."
     - name: Build roboguard
       run: |
-        docker compose run devcontainer bash -c "colcon build --symlink-install"
+        docker compose run devcontainer bash -c "cd /workspace/roboguard; colcon build --symlink-install"
       
     - name: Test roboguard
       run: |
-        docker compose run devcontainer bash -c "colcon test --packages-ignore micro_ros_setup"
+        docker compose run devcontainer bash -c "cd /workspace/roboguard; colcon test --packages-ignore micro_ros_setup"
 
