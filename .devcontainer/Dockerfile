@@ -33,7 +33,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     lsb-release \
     gnupg \
-    curl
+    curl \
+    tree
 
 # Change user
 RUN chown $USER_UID:$USER_GID /workspace/$USERNAME
@@ -49,7 +50,8 @@ RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 COPY --chown=$USERNAME ./ /workspace/$USERNAME
 
 # Add needed packages
-RUN vcs import src < roboguard.repos
+# RUN vcs import src < roboguard.repos
+RUN tree -L 3 .
 
 # Rosdep update
 RUN rosdep update
