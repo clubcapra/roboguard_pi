@@ -7,7 +7,7 @@ User=capra
 Group=capra
 Environment="ROS_DOMAIN_ID=96"
 Environment="ROS_LOG_DIR=/var/log/ros2"
-ExecStart=distrobox enter -- /bin/bash -c 'source /home/capra/roboguard_pi/install/setup.bash; ros2 launch roboguard_bringup joy.launch.py;'
+ExecStart=distrobox enter ros-ubuntu -- /bin/bash -c 'source /home/capra/roboguard_pi/install/setup.bash; ros2 launch roboguard_bringup joy.launch.py;'
 RemainAfterExit=no
 Restart=on-failure
 RestartSec=2s
