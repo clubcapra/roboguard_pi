@@ -42,19 +42,20 @@ RUN chown $USER_UID:$USER_GID /workspace/$USERNAME
 USER $USERNAME
 
 # Copy to preload the ros packages
-COPY ./ /workspace/$USERNAME/
+# COPY ./ /workspace/$USERNAME/
 
 # Source the ROS setup file
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
 
 COPY --chown=$USERNAME ./ /workspace/$USERNAME
 
+RUN cd /workspace/$USERNAME
+
 # Add needed packages
 RUN vcs import src < roboguard.repos
 RUN tree -L 3 .
 
 # Rosdep update
-RUN rosdep update
-
-# Install ROS dependencies
-RUN rosdep install --from-paths src --ignore-src --rosdistro humble -y
+RUN bash -c "source /opt/ros/humble/setup.bash && \
+    rosdep update && \
+    rosdep install --from-paths src --ignore-src -r -y"
