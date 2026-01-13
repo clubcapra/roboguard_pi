@@ -1,0 +1,29 @@
+name: ROS2 roboguard build
+run-name: ${{ github.actor }} is working on ROS2 roboguard build
+on: [push]
+jobs:
+  Build_roboguard:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v3
+
+    - name: Build docker compose
+      run: |
+        docker compose build --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g)
+    - name: Import dependencies
+      run: |
+        docker compose run devcontainer bash -c \
+          "vcs import src < roboguard.repos"
+    - name: Build roboguard
+      run: |
+        docker compose run devcontainer bash -c "colcon build --symlink-install"
+      
+    - name: Test roboguard
+      run: |
+        docker compose run devcontainer bash -c "colcon test --packages-ignore micro_ros_setup"
+

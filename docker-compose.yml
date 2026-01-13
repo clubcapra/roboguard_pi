@@ -1,0 +1,20 @@
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: ./.devcontainer/Dockerfile
+      args:
+        - USER_UID=${USER_UID:-1000}
+        - USER_GID=${USER_GID:-1000}
+    volumes:
+      - ./:/workspace/roboguard
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /tmp/.Xauthority:/tmp/.Xauthority:rw
+      - /dev/input:/dev/input:rw
+    devices:
+      - /dev/input:/dev/input:rw
+    env_file:
+      - .env
+    command: sleep infinity
+    network_mode: "host"
+    privileged: true

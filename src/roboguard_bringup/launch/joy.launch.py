@@ -9,9 +9,7 @@ def generate_launch_description():
     dir = get_package_share_directory(package_name)
     # Get params files
     joy_params_file = dir + "/config/joy_params.yaml"
-    teleop_joy_params_file = dir + "/config/teleop_joy_params.yaml"
     
-
     return LaunchDescription(
         [
             Node(
@@ -22,16 +20,6 @@ def generate_launch_description():
                 parameters=[joy_params_file],
                 remappings=[
                     ("/joy", "/rove/joy"),
-                ],
-            ),
-            Node(
-                package="teleop_twist_joy",
-                executable="teleop_node",
-                name="teleop_twist_joy_node",
-                parameters=[teleop_joy_params_file],
-                remappings=[
-                    ("/joy", "/rove/joy"),
-                    ("/cmd_vel", "/rove/cmd_vel"),
                 ],
             ),
         ]
