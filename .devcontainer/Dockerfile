@@ -50,7 +50,6 @@ COPY --chown=$USERNAME ./ /workspace/$USERNAME
 
 # Add needed packages
 RUN vcs import src < roboguard.repos
-RUN ls src
 
 # Rosdep update
 RUN rosdep update
