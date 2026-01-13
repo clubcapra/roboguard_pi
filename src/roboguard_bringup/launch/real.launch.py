@@ -151,6 +151,12 @@ def generate_launch_description():
         output="screen",
         arguments=("/rove/cmd_vel", "/diff_drive_controller/cmd_vel_unstamped")
     )
+    
+    teleop = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_roboguard_bringup, "launch", "teleop.launch.py"),
+        ),
+    )
 
     return LaunchDescription(
         [
@@ -163,5 +169,6 @@ def generate_launch_description():
             *delayed_controller_nodes,
             twist_mux,
             cmd_vel_relay,
+            teleop,
         ]
     )
