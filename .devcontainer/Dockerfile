@@ -33,8 +33,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     lsb-release \
     gnupg \
-    curl \
-    tree
+    curl
 
 # Change user
 RUN chown $USER_UID:$USER_GID /workspace/$USERNAME
