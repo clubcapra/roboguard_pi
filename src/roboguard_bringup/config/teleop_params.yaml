@@ -1,3 +1,27 @@
+/joy_mux:
+  ros__parameters:
+    topics:
+      steamdeck_lora:
+        topic   : rove/lora/steamdeck/joy
+        timeout : 0.5
+        priority: 101
+      xbox_lora:
+        topic   : rove/lora/xbox/joy
+        timeout : 0.5
+        priority: 100
+      steamdeck_uhard:
+        topic   : rove/uhard/steamdeck/joy
+        timeout : 0.5
+        priority: 91
+      xbox_uhard:
+        topic   : rove/uhard/xbox/joy
+        timeout : 0.5
+        priority: 90
+      others:
+        topic   : rove/other/joy
+        timeout : 0.5
+        priority: 10
+
 /scheme_selector:
   ros__parameters:
     button1_index: 14 # DPAD_LEFT

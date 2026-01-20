@@ -18,18 +18,21 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    # Declare parameters
-    use_mock_hardware_dec = DeclareLaunchArgument("use_mock_hardware", default_value="false")
-    use_mock_hardware = LaunchConfiguration("use_mock_hardware")
-    
     # Get the launch directory
-    pkg_roboguard_description = get_package_share_directory("roboguard_description")
     pkg_roboguard_bringup = get_package_share_directory("roboguard_bringup")
     
     joy_config_file = pkg_roboguard_bringup + "/config/teleop_params.yaml"
     
     
-    joy_mux = None # TODO add joy_mux node
+    joy_mux = Node(
+        package="joy_mux",
+        executable="joy_mux",
+        output="screen",
+        parameters=[joy_config_file],
+        remappings=[
+            ("/joy_mux_topic", "/rove/joy"),
+        ],
+    )
     
     # Selects the teleop mapping
     scheme_selector = Node(
@@ -121,7 +124,7 @@ def generate_launch_description():
     
     return LaunchDescription(
         [
-            # joy_mux,
+            joy_mux,
             scheme_selector,
             teleop_mapper,
             teleop_twist_joy,

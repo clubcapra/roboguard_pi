@@ -53,7 +53,6 @@ RUN cd /workspace/$USERNAME
 
 # Add needed packages
 RUN vcs import src < roboguard.repos
-RUN tree -L 3 .
 
 # Rosdep update
 RUN bash -c "source /opt/ros/humble/setup.bash && \
