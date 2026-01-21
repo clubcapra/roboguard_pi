@@ -33,8 +33,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     lsb-release \
     gnupg \
-    curl \
-    tree
+    curl
 
 # Change user
 RUN chown $USER_UID:$USER_GID /workspace/$USERNAME
@@ -53,7 +52,6 @@ RUN cd /workspace/$USERNAME
 
 # Add needed packages
 RUN vcs import src < roboguard.repos
-RUN tree -L 3 .
 
 # Rosdep update
 RUN bash -c "source /opt/ros/humble/setup.bash && \

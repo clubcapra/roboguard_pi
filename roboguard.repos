@@ -23,6 +23,10 @@ repositories:
     type: git
     url: https://github.com/clubcapra/capra_teleop_mapper.git
     version: humble
+  joy_mux:
+    type: git
+    url: https://github.com/clubcapra/joy_mux.git
+    version: main
   micro_ros_setup/src/micro_ros_setup:
     type: git
     url: https://github.com/micro-ROS/micro_ros_setup.git
