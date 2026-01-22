@@ -1,24 +1,36 @@
 #!/usr/bin/bash
 
+# 1. Setup Logging Directories
 sudo mkdir -p /var/log/ros2
 sudo chmod 775 /var/log/ros2
 sudo chown capra:capra /var/log/ros2
 
-script_dir="$(dirname "$(readlink -f "$0")")"
+# 2. Define Paths
+USER_SYSTEMD_DIR="$HOME/.config/systemd/user"
+mkdir -p "$USER_SYSTEMD_DIR"
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
-systemctl disable --user roboguard_launch.service
-sudo systemctl disable roboguard_launch.service
+# 3. Clean up old System-level services (if they exist) to avoid confusion
+sudo systemctl disable --now roboguard_launch.service 2>/dev/null
+sudo systemctl disable --now roboguard_joy.service 2>/dev/null
+sudo rm -f /etc/systemd/system/roboguard_launch.service
+sudo rm -f /etc/systemd/system/roboguard_joy.service
 
-systemctl stop --user roboguard_launch.service
-systemctl stop --user roboguard_joy.service
-#sudo cp $script_dir/roboguard_launch.service /etc/systemd/user/roboguard_launch.service
-#sudo cp $script_dir/roboguard_joy.service /etc/systemd/user/roboguard_joy.service
-#systemctl enable --now --user roboguard_launch.service
+# 4. Install and Enable User-level services
+echo "Installing services to $USER_SYSTEMD_DIR..."
 
-sudo systemctl stop roboguard_launch.service
-sudo systemctl stop roboguard_joy.service
-sudo cp $script_dir/roboguard_launch.service /etc/systemd/system/roboguard_launch.service
-sudo cp $script_dir/roboguard_joy.service /etc/systemd/system/roboguard_joy.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now roboguard_launch.service
+cp "$SCRIPT_DIR/roboguard_launch.service" "$USER_SYSTEMD_DIR/"
+cp "$SCRIPT_DIR/roboguard_joy.service" "$USER_SYSTEMD_DIR/"
 
+# Reload the user daemon
+systemctl --user daemon-reload
+
+# Enable and Start the services
+systemctl --user enable roboguard_launch.service
+systemctl --user restart roboguard_launch.service
+
+# Joy is an optional service
+systemctl --user stop roboguard_joy.service
+
+echo "Done! Check status with: systemctl --user status roboguard_launch.service"
+echo "For local joy control, use: systemctl --user start roboguard_joy.service"

@@ -1,16 +1,13 @@
 [Unit]
-Descript=Roboguard launch service
+Description=Launches all nodes required for the control of Rove
 After=network.target
 
 [Service]
-User=capra
-Group=capra
 Environment="ROS_LOG_DIR=/var/log/ros2"
 Environment="ROS_DOMAIN_ID=96"
-ExecStart=distrobox enter ros-ubuntu -- /bin/zsh -c 'source /home/capra/roboguard_pi/install/setup.zsh; ros2 launch roboguard_bringup real.launch.py;'
-RemainAfterExit=no
+ExecStart=/usr/bin/distrobox enter ros-ubuntu -- /bin/zsh -c "source /home/capra/roboguard_pi/install/setup.zsh && ros2 launch roboguard_bringup real.launch.py"
 Restart=on-failure
-RestartSec=2s
+RestartSec=5s
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
