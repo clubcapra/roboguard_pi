@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <robot name="rove" xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <xacro:arg name="use_mock_hardware" default="false"/>
+    <xacro:arg name="use_mock_odrives" default="false"/>
+    <xacro:arg name="use_mock_ovis" default="false"/>
+    <xacro:arg name="with_ovis" default="false"/>
 
     <material name="rubber_color">
         <color rgba="0.1 0.1 0.1 1.0" />
@@ -37,14 +39,25 @@
     </link>
 
     <!-- Put these at -1 to mock the motors if working without the motors -->
-    <xacro:if value="$(arg use_mock_hardware)">
-        <xacro:odrive_control fl_id="-1" rl_id="-1" fr_id="-1" rr_id="-1" />
+    <xacro:if value="$(arg use_mock_odrives)">
+        <xacro:odrive_control fr_id="-1" fl_id="-1" rl_id="-1" rr_id="-1" />
     </xacro:if>
-    <xacro:unless value="$(arg use_mock_hardware)">
-        <!-- <xacro:odrive_control fl_id="21" rl_id="22" fr_id="23" rr_id="24" /> -->
-        <xacro:odrive_control fl_id="31" rl_id="-1" fr_id="-1" rr_id="-1" />
+    <xacro:unless value="$(arg use_mock_odrives)">
+        <!-- <xacro:odrive_control fr_id="31" fl_id="32" rl_id="33" rr_id="34" /> -->
+        <xacro:odrive_control fr_id="-1" fl_id="-1" rl_id="33" rr_id="-1" />
     </xacro:unless>
 
 
+    <xacro:if value="$(arg with_ovis)">
+        <xacro:include filename="$(find ovis_description)/urdf/ovis.urdf.xacro" />
+        <link name="ovis_base_link" />
+        <joint name="ovis_base" type="fixed">
+            <parent link="base_link" />
+            <child link="ovis_base_link" />
+            <origin xyz="0 -0.3 0.5" rpy="0 0 0" />
+        </joint>
+
+        <xacro:ovis base_parent="ovis_base_link" use_mock="$(arg use_mock_ovis)"/>
+    </xacro:if>
 
 </robot>

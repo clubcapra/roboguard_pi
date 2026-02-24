@@ -82,7 +82,17 @@ ros2 launch roboguard_bringup real.launch.py
 
 If you are not connected to the ODrives, you can use the following command:
 ```bash
-ros2 launch roboguard_bringup real.launch.py use_mock_hardware:=true
+ros2 launch roboguard_bringup real.launch.py use_mock_odrives:=true
+```
+
+If you are not connected to Ovis, you can use the following command:
+```bash
+ros2 launch roboguard_bringup real.launch.py use_mock_ovis:=true
+```
+
+To launch without Ovis, you can use the following command:
+```bash
+ros2 launch roboguard_bringup real.launch.py use_ovis:=false
 ```
 
 ### Joy control

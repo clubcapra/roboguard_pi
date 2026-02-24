@@ -19,8 +19,14 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     # Declare parameters
-    use_mock_hardware_dec = DeclareLaunchArgument("use_mock_hardware", default_value="false")
-    use_mock_hardware = LaunchConfiguration("use_mock_hardware")
+    use_mock_odrives_dec = DeclareLaunchArgument("use_mock_odrives", default_value="false")
+    use_mock_odrives = LaunchConfiguration("use_mock_odrives")
+    
+    use_mock_ovis_dec = DeclareLaunchArgument("use_mock_ovis", default_value="false")
+    use_mock_ovis = LaunchConfiguration("use_mock_ovis")
+    
+    with_ovis_dec = DeclareLaunchArgument("with_ovis", default_value="true")
+    with_ovis = LaunchConfiguration("with_ovis")
     
     # Get the launch directory
     pkg_roboguard_description = get_package_share_directory("roboguard_description")
@@ -35,8 +41,14 @@ def generate_launch_description():
             " ",
             PathJoinSubstitution([urdf_path]),
             " ",
-            "use_mock_hardware:=",
-            use_mock_hardware,
+            "use_mock_odrives:=",
+            use_mock_odrives,
+            " ",
+            "use_mock_ovis:=",
+            use_mock_ovis,
+            " ",
+            "with_ovis:=",
+            with_ovis,
         ]
     )
     
@@ -160,7 +172,9 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            use_mock_hardware_dec,
+            use_mock_odrives_dec,
+            use_mock_ovis_dec,
+            with_ovis_dec,
             # start_can_cmd,
             # shutdown,
             robot_state_publisher,
