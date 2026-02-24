@@ -12,9 +12,24 @@ controller_manager:
     diff_drive_controller:
       type: diff_drive_controller/DiffDriveController
 
+    ovis_controller:
+      type: forward_command_controller/ForwardCommandController
+
+
+ovis_controller:
+  ros__parameters:
+    joints:
+      - ovis_joint_1
+      - ovis_joint_2
+      - ovis_joint_3
+      - ovis_joint_4
+      - ovis_joint_5
+      - ovis_joint_6
+    interface_name: velocity
+
 odrive_controller:
   ros__parameters:
-    joint_names: ["track_fl_j"]
+    joint_names: ["track_fl_j", "track_fr_j", "track_rl_j", "track_rr_j"]
     # absolute_position_names: ["track_fl_j"]
 
 diff_drive_controller:

@@ -43,7 +43,7 @@
         <xacro:odrive_control fr_id="-1" fl_id="-1" rl_id="-1" rr_id="-1" />
     </xacro:if>
     <xacro:unless value="$(arg use_mock_odrives)">
-        <xacro:odrive_control fr_id="31" fl_id="32" rl_id="33" rr_id="34" />
+        <xacro:odrive_control fr_id="11" fl_id="13" rl_id="14" rr_id="33" />
     </xacro:unless>
 
 

@@ -65,7 +65,7 @@ def generate_launch_description():
     )
     
     # Controllers
-    controller_nodes = ["odrive_controller", "diff_drive_controller"]
+    controller_nodes = ["odrive_controller", "diff_drive_controller", "ovis_controller"]
     
     
     ###### ROS2 control ######
@@ -164,6 +164,18 @@ def generate_launch_description():
         arguments=("/rove/cmd_vel", "/diff_drive_controller/cmd_vel_unstamped")
     )
     
+    enable_relays = [
+        Node(
+            package="topic_tools",
+            executable="relay",
+            name=f"track_{track}_remap",
+            output="screen",
+            arguments=("/rove/enable", f"/rove/track_{track}_j/enable")
+        )
+        
+        for track in ["rl", "rr", "fl", "fr"]
+    ]
+    
     teleop = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_roboguard_bringup, "launch", "teleop.launch.py"),
@@ -177,6 +189,7 @@ def generate_launch_description():
             with_ovis_dec,
             # start_can_cmd,
             # shutdown,
+            *enable_relays,
             robot_state_publisher,
             control_node,
             joint_state_broadcaster_spawner,
