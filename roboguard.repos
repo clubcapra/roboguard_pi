@@ -30,7 +30,7 @@ repositories:
   ovis_ros2:
     type: git
     url: https://github.com/clubcapra/ovis_ros2.git
-    version: master
+    version: 98756dc0b4ebf52c7c337bbf955a669c8c3f06d8
   micro_ros_setup/src/micro_ros_setup:
     type: git
     url: https://github.com/micro-ROS/micro_ros_setup.git
