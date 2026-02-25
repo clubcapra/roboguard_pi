@@ -170,7 +170,7 @@ def generate_launch_description():
             executable="relay",
             name=f"track_{track}_remap",
             output="screen",
-            arguments=("/rove/enable", f"/rove/track_{track}_j/enable")
+            arguments=("/rove/enable", f"/odrive_controller/enable/track_{track}_j")
         )
         
         for track in ["rl", "rr", "fl", "fr"]
