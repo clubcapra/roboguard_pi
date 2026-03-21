@@ -11,6 +11,7 @@
 
   <exec_depend>xacro</exec_depend>
   <exec_depend>ros2_control</exec_depend>
+  <depend>ovis_description</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

@@ -27,6 +27,10 @@ repositories:
     type: git
     url: https://github.com/clubcapra/joy_mux.git
     version: main
+  ovis_ros2:
+    type: git
+    url: https://github.com/clubcapra/ovis_ros2.git
+    version: master
   micro_ros_setup/src/micro_ros_setup:
     type: git
     url: https://github.com/micro-ROS/micro_ros_setup.git
