@@ -107,4 +107,5 @@ ros2 launch roboguard_bringup joy.launch.py
 Before pushing your code, you should try to deploy it by using:
 ```bash
 docker compose build --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g) --build-arg USERNAME=$(id -un)
+docker compose run devcontainer bash -c "colcon build --symlink-install ; colcon test --packages-ignore micro_ros_setup"
 ```
