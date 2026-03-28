@@ -37,48 +37,6 @@
     </DockSplitter>
    </Container>
   </Tab>
-  <Tab tab_name="Ovis" containers="1">
-   <Container>
-    <DockSplitter count="3" orientation="-" sizes="0.333001;0.333998;0.333001">
-     <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
-       <range right="121.020199" bottom="-0.100000" left="116.020458" top="0.100000"/>
-       <limitY/>
-       <curve color="#f14cc1" name="/joint_states/ovis_joint_1/velocity"/>
-       <curve color="#9467bd" name="/joint_states/ovis_joint_2/velocity"/>
-       <curve color="#17becf" name="/joint_states/ovis_joint_3/velocity"/>
-       <curve color="#bcbd22" name="/joint_states/ovis_joint_4/velocity"/>
-       <curve color="#1f77b4" name="/joint_states/ovis_joint_5/velocity"/>
-       <curve color="#d62728" name="/joint_states/ovis_joint_6/velocity"/>
-      </plot>
-     </DockArea>
-     <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
-       <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
-       <limitY/>
-       <curve color="#f14cc1" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#9467bd" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#17becf" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#bcbd22" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#1f77b4" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#d62728" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-      </plot>
-     </DockArea>
-     <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
-       <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
-       <limitY/>
-       <curve color="#f14cc1" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#9467bd" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#17becf" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#bcbd22" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#1f77b4" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-       <curve color="#d62728" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
-      </plot>
-     </DockArea>
-    </DockSplitter>
-   </Container>
-  </Tab>
   <currentTabIndex index="0"/>
  </tabbed_widget>
  <use_relative_time_offset enabled="1"/>

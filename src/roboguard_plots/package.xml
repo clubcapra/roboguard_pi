@@ -4,16 +4,18 @@
   <name>roboguard_plots</name>
   <version>0.0.0</version>
   <description>Package for plotting values of roboguard</description>
-  <maintainer email="clubcapra@ens.etsmtl.ca">capra</maintainer>
+  <maintainer email="capra@ens.etsmtl.ca">capra</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
-
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <depend>plotjuggler_ros</depend>
   <depend>plotjuggler</depend>
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
+
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>ament_python</build_type>
   </export>
 </package>
