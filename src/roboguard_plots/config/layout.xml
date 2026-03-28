@@ -18,20 +18,20 @@
       <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
        <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
        <limitY/>
-       <curve color="#1f77b4" name="/dynamic_joint_states/track_fl_j/temperature"/>
-       <curve color="#d62728" name="/dynamic_joint_states/track_fr_j/temperature"/>
-       <curve color="#1ac938" name="/dynamic_joint_states/track_rl_j/temperature"/>
-       <curve color="#ff7f0e" name="/dynamic_joint_states/track_rr_j/temperature"/>
+       <curve color="#1f77b4" name="/dynamic_joint_states/interface_values[0]/values[13]"/>
+       <curve color="#d62728" name="/dynamic_joint_states/interface_values[1]/values[13]"/>
+       <curve color="#1ac938" name="/dynamic_joint_states/interface_values[2]/values[13]"/>
+       <curve color="#ff7f0e" name="/dynamic_joint_states/interface_values[3]/values[13]"/>
       </plot>
      </DockArea>
      <DockArea name="...">
       <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
        <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
        <limitY/>
-       <curve color="#1f77b4" name="/dynamic_joint_states/track_fl_j/current"/>
-       <curve color="#d62728" name="/dynamic_joint_states/track_fr_j/current"/>
-       <curve color="#1ac938" name="/dynamic_joint_states/track_rl_j/current"/>
-       <curve color="#ff7f0e" name="/dynamic_joint_states/track_rr_j/current"/>
+       <curve color="#1f77b4" name="/dynamic_joint_states/interface_values[0]/values[5]"/>
+       <curve color="#d62728" name="/dynamic_joint_states/interface_values[1]/values[5]"/>
+       <curve color="#1ac938" name="/dynamic_joint_states/interface_values[2]/values[5]"/>
+       <curve color="#ff7f0e" name="/dynamic_joint_states/interface_values[3]/values[5]"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -56,24 +56,24 @@
       <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
        <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
        <limitY/>
-       <curve color="#f14cc1" name="/dynamic_joint_states/ovis_joint_1/temperature"/>
-       <curve color="#9467bd" name="/dynamic_joint_states/ovis_joint_2/temperature"/>
-       <curve color="#17becf" name="/dynamic_joint_states/ovis_joint_3/temperature"/>
-       <curve color="#bcbd22" name="/dynamic_joint_states/ovis_joint_4/temperature"/>
-       <curve color="#1f77b4" name="/dynamic_joint_states/ovis_joint_5/temperature"/>
-       <curve color="#d62728" name="/dynamic_joint_states/ovis_joint_6/temperature"/>
+       <curve color="#f14cc1" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#9467bd" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#17becf" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#bcbd22" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#1f77b4" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#d62728" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
       </plot>
      </DockArea>
      <DockArea name="...">
       <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
        <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
        <limitY/>
-       <curve color="#f14cc1" name="/dynamic_joint_states/ovis_joint_1/current"/>
-       <curve color="#9467bd" name="/dynamic_joint_states/ovis_joint_2/current"/>
-       <curve color="#17becf" name="/dynamic_joint_states/ovis_joint_3/current"/>
-       <curve color="#bcbd22" name="/dynamic_joint_states/ovis_joint_4/current"/>
-       <curve color="#1f77b4" name="/dynamic_joint_states/ovis_joint_5/current"/>
-       <curve color="#d62728" name="/dynamic_joint_states/ovis_joint_6/current"/>
+       <curve color="#f14cc1" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#9467bd" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#17becf" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#bcbd22" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#1f77b4" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
+       <curve color="#d62728" name="/dynamic_joint_states/interface_values[0]/values[0]"/>
       </plot>
      </DockArea>
     </DockSplitter>
