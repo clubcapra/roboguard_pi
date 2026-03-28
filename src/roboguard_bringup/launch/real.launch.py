@@ -176,12 +176,6 @@ def generate_launch_description():
         for track in ["rl", "rr", "fl", "fr"]
     ]
     
-    teleop = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_roboguard_bringup, "launch", "teleop.launch.py"),
-        ),
-    )
-
     return LaunchDescription(
         [
             use_mock_odrives_dec,
@@ -196,6 +190,5 @@ def generate_launch_description():
             *delayed_controller_nodes,
             twist_mux,
             cmd_vel_relay,
-            teleop,
         ]
     )
