@@ -196,6 +196,6 @@ def generate_launch_description():
             *delayed_controller_nodes,
             twist_mux,
             cmd_vel_relay,
-            teleop,
+            # teleop,
         ]
     )
