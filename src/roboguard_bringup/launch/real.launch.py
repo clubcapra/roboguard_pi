@@ -17,7 +17,10 @@ from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
 from launch_ros.substitutions import FindPackageShare
 
 
+
 def generate_launch_description():
+    IN_DISTROBOX = os.path.exists('/run/host/etc')
+    
     # Declare parameters
     use_mock_odrives_dec = DeclareLaunchArgument("use_mock_odrives", default_value="false")
     use_mock_odrives = LaunchConfiguration("use_mock_odrives")
@@ -123,26 +126,29 @@ def generate_launch_description():
         delayed_controller_nodes.append(node)
         last_spawner = spawner
 
+    can_prefix = 'distrobox-host-exec ' if IN_DISTROBOX else ''
+
     start_can_cmd = ExecuteProcess(
         cmd=[[
-            'sudo ip link set down can0; sudo ip link set can0 type can bitrate 500000; sudo ifconfig can0 txqueuelen 1000; sudo ip link set up can0'
+            f'{can_prefix}sudo ip link set down can0 && '
+            f'{can_prefix}sudo ip link set can0 type can bitrate 500000 && '
+            f'{can_prefix}sudo ifconfig can0 txqueuelen 1000 && '
+            f'{can_prefix}sudo ip link set up can0'
         ]],
         shell=True
     )
 
     stop_can_cmd = ExecuteProcess(
-        cmd=[[
-            'sudo ip link set down can0'
-        ]],
+        cmd=[[f'{can_prefix}sudo ip link set down can0']],
         shell=True
     )
 
-    shutdown = RegisterEventHandler(
+    can_shutdown = RegisterEventHandler(
         event_handler=OnShutdown(
             on_shutdown=[stop_can_cmd]
         )
     )
-    
+
     twist_mux = Node(
         package="twist_mux",
         executable="twist_mux",
@@ -181,8 +187,8 @@ def generate_launch_description():
             use_mock_odrives_dec,
             use_mock_ovis_dec,
             with_ovis_dec,
-            # start_can_cmd,
-            # shutdown,
+            start_can_cmd,
+            can_shutdown,
             *enable_relays,
             robot_state_publisher,
             control_node,
