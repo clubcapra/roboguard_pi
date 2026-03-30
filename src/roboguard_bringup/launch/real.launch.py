@@ -207,6 +207,8 @@ def generate_launch_description():
             use_mock_odrives_dec,
             use_mock_ovis_dec,
             with_ovis_dec,
+            with_rosbag_dec,
+            rosbag_launch,
             start_can_cmd,
             can_shutdown,
             *enable_relays,
