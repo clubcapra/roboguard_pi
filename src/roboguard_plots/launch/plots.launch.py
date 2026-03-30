@@ -85,6 +85,7 @@ def run_xacro(xacro_path, indices, output_path):
         f"track_rl_joint_idx:={joint_idx('track_rl_j')}",
         f"track_rr_joint_idx:={joint_idx('track_rr_j')}",
         f"track_current_idx:={signal_idx(sample, 'bus_current')}",       # index 15
+        f"track_voltage_idx:={signal_idx(sample, 'bus_voltage')}",       # index 15
         f"track_temperature_idx:={signal_idx(sample, 'fet_temperature')}",  # index 9
     ]
 
@@ -132,3 +133,4 @@ def generate_launch_description():
     return LaunchDescription([
         OpaqueFunction(function=launch_setup),
     ])
+    
