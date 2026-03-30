@@ -15,7 +15,7 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
 from launch_ros.substitutions import FindPackageShare
-
+from launch.conditions import UnlessCondition
 
 
 def generate_launch_description():
@@ -135,18 +135,21 @@ def generate_launch_description():
             f'{can_prefix}sudo ifconfig can0 txqueuelen 1000 && '
             f'{can_prefix}sudo ip link set up can0'
         ]],
-        shell=True
+        shell=True,
+        condition=UnlessCondition(use_mock_odrives),
     )
 
     stop_can_cmd = ExecuteProcess(
         cmd=[[f'{can_prefix}sudo ip link set down can0']],
-        shell=True
+        shell=True,
     )
 
     can_shutdown = RegisterEventHandler(
-        event_handler=OnShutdown(
-            on_shutdown=[stop_can_cmd]
-        )
+        event_handler=OnProcessExit(
+            target_action=control_node,
+            on_exit=[stop_can_cmd],
+        ),
+        condition=UnlessCondition(use_mock_odrives),
     )
 
     twist_mux = Node(
