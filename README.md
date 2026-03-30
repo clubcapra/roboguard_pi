@@ -80,26 +80,25 @@ You can launch the real-world robot using the following command:
 ros2 launch roboguard_bringup real.launch.py
 ```
 
-If you are not connected to the ODrives, you can use the following command:
+Here are the arguments that can be used:
+
+|Argument |Default | Description |
+|-|-|-|
+|`use_mock_odrives`|`false`|Set this to true to use mock hardware interfaces. This allows testing out controlling the drives without having the hardware.|
+|`with_ovis`|`true`|Choose whether to launch Ovis. When this is true, Ovis will appear in the URDF.|
+|`use_mock_ovis`|`false`|Set this to true to use mock hardware interfaces. This allows testing out controlling Ovis without having the hardware.|
+|`with_rosbag`|`true`|When this is true, rosbag will start logging and will compress the rosbag on a successful shutdown.|
+
+Use args like so:
 ```bash
-ros2 launch roboguard_bringup real.launch.py use_mock_odrives:=true
+ros2 launch roboguard_bringup real.launch.py <arg>:=<value>
 ```
 
-If you are not connected to Ovis, you can use the following command:
-```bash
-ros2 launch roboguard_bringup real.launch.py use_mock_ovis:=true
-```
+### Teleop
 
-To launch without Ovis, you can use the following command:
+In order to control the robot, you need to run the teleop nodes:
 ```bash
-ros2 launch roboguard_bringup real.launch.py use_ovis:=false
-```
-
-### Joy control
-
-In order to control the robot, you need to run the joy nodes:
-```bash
-ros2 launch roboguard_bringup joy.launch.py
+ros2 launch roboguard_bringup teleop.launch.py
 ```
 
 ## Contributing

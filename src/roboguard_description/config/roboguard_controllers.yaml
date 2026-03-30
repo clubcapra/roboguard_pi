@@ -33,7 +33,7 @@ ovis_controller:
 odrive_controller:
   ros__parameters:
     joint_names: ["track_fl_j", "track_fr_j", "track_rl_j", "track_rr_j"]
-    # absolute_position_names: ["track_fl_j"]
+    absolute_position_names: [] # TODO: Add flippers here
 
 diff_drive_controller:
   ros__parameters:
@@ -63,22 +63,24 @@ diff_drive_controller:
     # velocity_rolling_window_size: 10
     use_stamped_vel: false
 
+    # Maybe we should set this to false since the max velocity is set from ODrive config
     linear.x.has_velocity_limits: true
     linear.x.has_acceleration_limits: false
     linear.x.has_jerk_limits: false
     linear.x.max_velocity: 5.0
     linear.x.min_velocity: -5.0
-    linear.x.max_acceleration: 2.0
-    linear.x.min_acceleration: -2.0
-    linear.x.max_jerk: 0.0
-    linear.x.min_jerk: 0.0
+    # linear.x.max_acceleration: 2.0
+    # linear.x.min_acceleration: -2.0
+    # linear.x.max_jerk: 0.0
+    # linear.x.min_jerk: 0.0
 
+    # This might still be useful though since we might want to limit the max spin speed
     angular.z.has_velocity_limits: true
     angular.z.has_acceleration_limits: false
     angular.z.has_jerk_limits: false
     angular.z.max_velocity: 1.0
     angular.z.min_velocity: -1.0
-    angular.z.max_acceleration: 3.0
-    angular.z.min_acceleration: -3.0
-    angular.z.max_jerk: 0.0
-    angular.z.min_jerk: 0.0
+    # angular.z.max_acceleration: 3.0
+    # angular.z.min_acceleration: -3.0
+    # angular.z.max_jerk: 0.0
+    # angular.z.min_jerk: 0.0

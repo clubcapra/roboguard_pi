@@ -1,5 +1,4 @@
 import os
-
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
@@ -12,9 +11,9 @@ from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable, AndSubstitution, NotSubstitution
 from launch_ros.actions import Node
-from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
-from launch_ros.substitutions import FindPackageShare
+from launch.event_handlers import OnProcessExit
 from launch.conditions import UnlessCondition
+
 
 def generate_launch_description():
     IN_DISTROBOX = os.path.exists('/run/host/etc')
@@ -75,17 +74,14 @@ def generate_launch_description():
         "ovis_controller" : IfCondition(real_ovis_present),
     }
     
-    
     ###### ROS2 control ######
     robot_controllers = PathJoinSubstitution(
         [
             pkg_roboguard_description,
-            # pkg_roboguard_bringup,
             "config",
             "roboguard_controllers.yaml",
         ]
     )
-    
 
     control_node = Node(
         package="controller_manager",
@@ -136,8 +132,9 @@ def generate_launch_description():
         delayed_controller_nodes.append(node)
         last_spawner = spawner
 
+    # Can configuration
     can_prefix = 'distrobox-host-exec ' if IN_DISTROBOX else ''
-
+    
     start_can_cmd = ExecuteProcess(
         cmd=[[
             f'{can_prefix}sudo ip link set down can0 && '
@@ -162,6 +159,7 @@ def generate_launch_description():
         condition=UnlessCondition(use_mock_odrives),
     )
 
+    # Twist mux
     twist_mux = Node(
         package="twist_mux",
         executable="twist_mux",
@@ -175,6 +173,7 @@ def generate_launch_description():
         },
     )
     
+    # Relay messages from /rove/cmd_vel -> /diff_drive_controller/cmd_vel_unstamped
     cmd_vel_relay = Node(
         package="topic_tools",
         executable="relay",
@@ -183,6 +182,7 @@ def generate_launch_description():
         arguments=("/rove/cmd_vel", "/diff_drive_controller/cmd_vel_unstamped")
     )
     
+    # Relay messages for odrive enables
     enable_relays = [
         Node(
             package="topic_tools",
@@ -195,6 +195,7 @@ def generate_launch_description():
         for track in ["rl", "rr", "fl", "fr"]
     ]
     
+    # Rosbag logging
     rosbag_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_roboguard_bringup, "launch", "rosbag.launch.py"),
@@ -204,10 +205,13 @@ def generate_launch_description():
     
     return LaunchDescription(
         [
+            # Declare args
             use_mock_odrives_dec,
             use_mock_ovis_dec,
             with_ovis_dec,
             with_rosbag_dec,
+            
+            # Start nodes
             rosbag_launch,
             start_can_cmd,
             can_shutdown,
