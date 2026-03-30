@@ -6,16 +6,14 @@ from launch.actions import (
     IncludeLaunchDescription,
     RegisterEventHandler,
     ExecuteProcess,
-    TimerAction,
     DeclareLaunchArgument,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
 from launch_ros.substitutions import FindPackageShare
-
 
 def generate_launch_description():
     # Declare parameters
@@ -27,6 +25,9 @@ def generate_launch_description():
     
     with_ovis_dec = DeclareLaunchArgument("with_ovis", default_value="true")
     with_ovis = LaunchConfiguration("with_ovis")
+    
+    with_rosbag_dec = DeclareLaunchArgument("with_rosbag", default_value="true")
+    with_rosbag = LaunchConfiguration("with_rosbag")
     
     # Get the launch directory
     pkg_roboguard_description = get_package_share_directory("roboguard_description")
@@ -66,6 +67,7 @@ def generate_launch_description():
     
     # Controllers
     controller_nodes = ["odrive_controller", "diff_drive_controller", "ovis_controller"]
+    
     
     
     ###### ROS2 control ######
@@ -134,7 +136,7 @@ def generate_launch_description():
         cmd=[[
             'sudo ip link set down can0'
         ]],
-        shell=True
+        shell=True,
     )
 
     shutdown = RegisterEventHandler(
@@ -176,11 +178,20 @@ def generate_launch_description():
         for track in ["rl", "rr", "fl", "fr"]
     ]
     
+    rosbag_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_roboguard_bringup, "launch", "rosbag.launch.py"),
+        ),
+        condition=IfCondition(with_rosbag),
+    )
+    
     return LaunchDescription(
         [
             use_mock_odrives_dec,
             use_mock_ovis_dec,
             with_ovis_dec,
+            with_rosbag_dec,
+            rosbag_launch,
             # start_can_cmd,
             # shutdown,
             *enable_relays,
