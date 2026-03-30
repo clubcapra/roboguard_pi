@@ -14,8 +14,11 @@ from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitut
 from launch_ros.actions import Node
 from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
 from launch_ros.substitutions import FindPackageShare
+from launch.conditions import UnlessCondition
 
 def generate_launch_description():
+    IN_DISTROBOX = os.path.exists('/run/host/etc')
+    
     # Declare parameters
     use_mock_odrives_dec = DeclareLaunchArgument("use_mock_odrives", default_value="false")
     use_mock_odrives = LaunchConfiguration("use_mock_odrives")
@@ -133,26 +136,32 @@ def generate_launch_description():
         delayed_controller_nodes.append(node)
         last_spawner = spawner
 
+    can_prefix = 'distrobox-host-exec ' if IN_DISTROBOX else ''
+
     start_can_cmd = ExecuteProcess(
         cmd=[[
-            'sudo ip link set down can0; sudo ip link set can0 type can bitrate 500000; sudo ifconfig can0 txqueuelen 1000; sudo ip link set up can0'
+            f'{can_prefix}sudo ip link set down can0 && '
+            f'{can_prefix}sudo ip link set can0 type can bitrate 500000 && '
+            f'{can_prefix}sudo ifconfig can0 txqueuelen 1000 && '
+            f'{can_prefix}sudo ip link set up can0'
         ]],
-        shell=True
+        shell=True,
+        condition=UnlessCondition(use_mock_odrives),
     )
 
     stop_can_cmd = ExecuteProcess(
-        cmd=[[
-            'sudo ip link set down can0'
-        ]],
+        cmd=[[f'{can_prefix}sudo ip link set down can0']],
         shell=True,
     )
 
-    shutdown = RegisterEventHandler(
-        event_handler=OnShutdown(
-            on_shutdown=[stop_can_cmd]
-        )
+    can_shutdown = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=control_node,
+            on_exit=[stop_can_cmd],
+        ),
+        condition=UnlessCondition(use_mock_odrives),
     )
-    
+
     twist_mux = Node(
         package="twist_mux",
         executable="twist_mux",
@@ -200,8 +209,8 @@ def generate_launch_description():
             with_ovis_dec,
             with_rosbag_dec,
             rosbag_launch,
-            # start_can_cmd,
-            # shutdown,
+            start_can_cmd,
+            can_shutdown,
             *enable_relays,
             robot_state_publisher,
             control_node,
