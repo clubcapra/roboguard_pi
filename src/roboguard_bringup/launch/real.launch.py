@@ -9,8 +9,9 @@ from launch.actions import (
     TimerAction,
     DeclareLaunchArgument,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable, AndSubstitution, NotSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
@@ -27,6 +28,8 @@ def generate_launch_description():
     
     with_ovis_dec = DeclareLaunchArgument("with_ovis", default_value="true")
     with_ovis = LaunchConfiguration("with_ovis")
+    
+    real_ovis_present = AndSubstitution(NotSubstitution(use_mock_ovis), with_ovis)
     
     # Get the launch directory
     pkg_roboguard_description = get_package_share_directory("roboguard_description")
@@ -66,7 +69,9 @@ def generate_launch_description():
     
     # Controllers
     controller_nodes = ["odrive_controller", "diff_drive_controller", "ovis_controller"]
-    
+    controller_conditions = {
+        "ovis_controller" : IfCondition(real_ovis_present),
+    }
     
     ###### ROS2 control ######
     robot_controllers = PathJoinSubstitution(
@@ -102,6 +107,10 @@ def generate_launch_description():
             executable="spawner",
             arguments=[node_name, "-c", "/controller_manager"],
         )
+        
+        kwargs = {}
+        if node_name in controller_conditions.keys():
+            kwargs = {"condition": controller_conditions[node_name]}
 
         # Delay start of robot_controller after `joint_state_broadcaster`
         delay_robot_controller_spawner_after = (
@@ -109,7 +118,8 @@ def generate_launch_description():
                 event_handler=OnProcessExit(
                     target_action=after,
                     on_exit=[robot_controller_spawner],
-                )
+                ),
+                **kwargs
             )
         )
         return delay_robot_controller_spawner_after, robot_controller_spawner
