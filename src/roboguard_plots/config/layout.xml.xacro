@@ -9,6 +9,7 @@
   <xacro:arg name="track_rl_joint_idx"    default="4"/>
   <xacro:arg name="track_rr_joint_idx"    default="9"/>
   <xacro:arg name="track_current_idx"     default="15"/>
+  <xacro:arg name="track_voltage_idx"     default="15"/>
   <xacro:arg name="track_temperature_idx" default="10"/>
 
   <!-- ===================================================== -->
@@ -45,6 +46,18 @@
               <xacro:iface color="#d62728" idx="$(arg track_fr_joint_idx)" vidx="$(arg track_current_idx)"/>
               <xacro:iface color="#1ac938" idx="$(arg track_rl_joint_idx)" vidx="$(arg track_current_idx)"/>
               <xacro:iface color="#ff7f0e" idx="$(arg track_rr_joint_idx)" vidx="$(arg track_current_idx)"/>
+            </plot>
+          </DockArea>
+
+          <!-- Bus voltage -->
+          <DockArea name="...">
+            <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
+              <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
+              <limitY/>
+              <xacro:iface color="#1f77b4" idx="$(arg track_fl_joint_idx)" vidx="$(arg track_voltage_idx)"/>
+              <xacro:iface color="#d62728" idx="$(arg track_fr_joint_idx)" vidx="$(arg track_voltage_idx)"/>
+              <xacro:iface color="#1ac938" idx="$(arg track_rl_joint_idx)" vidx="$(arg track_voltage_idx)"/>
+              <xacro:iface color="#ff7f0e" idx="$(arg track_rr_joint_idx)" vidx="$(arg track_voltage_idx)"/>
             </plot>
           </DockArea>
 

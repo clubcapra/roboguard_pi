@@ -6,17 +6,15 @@ from launch.actions import (
     IncludeLaunchDescription,
     RegisterEventHandler,
     ExecuteProcess,
-    TimerAction,
     DeclareLaunchArgument,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable, AndSubstitution, NotSubstitution
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
 from launch_ros.substitutions import FindPackageShare
 from launch.conditions import UnlessCondition
-
 
 def generate_launch_description():
     IN_DISTROBOX = os.path.exists('/run/host/etc')
@@ -30,6 +28,10 @@ def generate_launch_description():
     
     with_ovis_dec = DeclareLaunchArgument("with_ovis", default_value="true")
     with_ovis = LaunchConfiguration("with_ovis")
+    real_ovis_present = AndSubstitution(NotSubstitution(use_mock_ovis), with_ovis)
+    
+    with_rosbag_dec = DeclareLaunchArgument("with_rosbag", default_value="true")
+    with_rosbag = LaunchConfiguration("with_rosbag")
     
     # Get the launch directory
     pkg_roboguard_description = get_package_share_directory("roboguard_description")
@@ -69,6 +71,9 @@ def generate_launch_description():
     
     # Controllers
     controller_nodes = ["odrive_controller", "diff_drive_controller", "ovis_controller"]
+    controller_conditions = {
+        "ovis_controller" : IfCondition(real_ovis_present),
+    }
     
     
     ###### ROS2 control ######
@@ -105,6 +110,10 @@ def generate_launch_description():
             executable="spawner",
             arguments=[node_name, "-c", "/controller_manager"],
         )
+        
+        kwargs = {}
+        if node_name in controller_conditions.keys():
+            kwargs = {"condition": controller_conditions[node_name]}
 
         # Delay start of robot_controller after `joint_state_broadcaster`
         delay_robot_controller_spawner_after = (
@@ -112,7 +121,8 @@ def generate_launch_description():
                 event_handler=OnProcessExit(
                     target_action=after,
                     on_exit=[robot_controller_spawner],
-                )
+                ),
+                **kwargs
             )
         )
         return delay_robot_controller_spawner_after, robot_controller_spawner
@@ -184,6 +194,13 @@ def generate_launch_description():
         
         for track in ["rl", "rr", "fl", "fr"]
     ]
+    
+    rosbag_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_roboguard_bringup, "launch", "rosbag.launch.py"),
+        ),
+        condition=IfCondition(with_rosbag),
+    )
     
     return LaunchDescription(
         [
