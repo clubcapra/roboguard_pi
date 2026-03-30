@@ -33,7 +33,7 @@ ovis_controller:
 odrive_controller:
   ros__parameters:
     joint_names: ["track_fl_j", "track_fr_j", "track_rl_j", "track_rr_j"]
-    absolute_position_names: [] # TODO: Add flippers here
+    # absolute_position_names: [] # TODO: Add flippers here
 
 diff_drive_controller:
   ros__parameters:
