@@ -7,8 +7,6 @@
     <!-- Ovis args -->
     <xacro:arg name="use_mock_ovis" default="false"/>
     <xacro:arg name="with_ovis" default="false"/>
-    <xacro:arg name="with_ovis" default="false"/>
-    <!-- TODO: Add ovis parameters (ip, etc) -->
 
     <material name="rubber_color">
         <color rgba="0.1 0.1 0.1 1.0" />
