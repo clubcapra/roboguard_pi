@@ -6,9 +6,11 @@
             <command_interface name="position"/>
             <command_interface name="velocity"/>
             <command_interface name="effort"/>
-            <!-- <command_interface name="estop"/> -->
+            <!-- NOT IMPLEMENTED -->
+            <!-- <command_interface name="estop"/> --> 
             <command_interface name="enable"/>
             <command_interface name="clear_errors_cmd"/>
+            <!-- UNTESTED -->
             <!-- <command_interface name="set_absolute_position"/> -->
             <state_interface name="position"/>
             <state_interface name="velocity"/>
@@ -36,9 +38,11 @@
             <command_interface name="position"/>
             <command_interface name="velocity"/>
             <command_interface name="effort"/>
+            <!-- NOT IMPLEMENTED -->
             <!-- <command_interface name="estop"/> -->
             <command_interface name="enable"/>
             <command_interface name="clear_errors_cmd"/>
+            <!-- UNTESTED -->
             <!-- <command_interface name="set_absolute_position"/> -->
             <state_interface name="position"/>
             <state_interface name="velocity"/>
@@ -78,7 +82,6 @@
             <ros2_control name="odrive_control" type="system">
                 <hardware>
                     <plugin>odrive_hardware_interface_plugin/BetterODriveHardwareInterface</plugin>
-                    <!-- <plugin>odrive_ros2_control_plugin/ODriveHardwareInterface</plugin> -->
                     <param name="can">can0</param>
                 </hardware>
                 <xacro:rove_odrive_motor suffix="fl" id="${fl_id}"/>

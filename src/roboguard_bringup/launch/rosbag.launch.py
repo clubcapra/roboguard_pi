@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 import launch.logging
 from launch.actions import ExecuteProcess, RegisterEventHandler, OpaqueFunction
-from launch.event_handlers import OnShutdown
+from launch.event_handlers import OnProcessExit
 import os
 import subprocess
 import shutil
@@ -121,21 +121,23 @@ def _cleanup(path, log):
 def generate_launch_description():
     ros_log_dir = launch.logging.launch_config.log_dir
 
-    return LaunchDescription([
-        ExecuteProcess(
-            cmd=[
-                "ros2", "bag", "record",
-                "-a",
-                "--output", ros_log_dir + "/bag",
-                "--storage", "mcap",
-                "--max-cache-size", "0",
-            ],
-            output="screen",
-        ),
+    rosbag = ExecuteProcess(
+        cmd=[
+            "ros2", "bag", "record",
+            "-a",
+            "--output", ros_log_dir + "/bag",
+            "--storage", "mcap",
+            "--max-cache-size", "0",
+        ],
+        output="screen",
+    )
 
+    return LaunchDescription([
+        rosbag,
         RegisterEventHandler(
-            OnShutdown(
-                on_shutdown=[OpaqueFunction(function=compress_bag)]
+            OnProcessExit(
+                target_action=rosbag,
+                on_exit=[OpaqueFunction(function=compress_bag)]
             )
         ),
     ])

@@ -1,20 +1,6 @@
-import os
-
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import (
-    IncludeLaunchDescription,
-    RegisterEventHandler,
-    ExecuteProcess,
-    TimerAction,
-    DeclareLaunchArgument,
-)
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution, FindExecutable
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
-from launch.event_handlers import OnProcessExit, OnShutdown, OnProcessStart
-from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
@@ -97,7 +83,7 @@ def generate_launch_description():
         ],
     )
 
-    # 
+    # ODrive enables
     enable_node = Node(
         package="capra_joy_to_bool",
         executable="joy_to_bool",
@@ -110,6 +96,7 @@ def generate_launch_description():
         ],
     )
     
+    # Estop message
     estop_control = Node(
         package="capra_joy_to_bool",
         executable="joy_to_bool",

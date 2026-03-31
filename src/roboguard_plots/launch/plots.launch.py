@@ -4,12 +4,10 @@ import tempfile
 import os
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import JointState
 from control_msgs.msg import DynamicJointState
 
 from launch import LaunchDescription
 from launch.actions import OpaqueFunction, ExecuteProcess
-from launch_ros.actions import Node as LaunchNode
 from ament_index_python.packages import get_package_share_directory
 
 
@@ -84,9 +82,9 @@ def run_xacro(xacro_path, indices, output_path):
         f"track_fr_joint_idx:={joint_idx('track_fr_j')}",
         f"track_rl_joint_idx:={joint_idx('track_rl_j')}",
         f"track_rr_joint_idx:={joint_idx('track_rr_j')}",
-        f"track_current_idx:={signal_idx(sample, 'bus_current')}",       # index 15
-        f"track_voltage_idx:={signal_idx(sample, 'bus_voltage')}",       # index 15
-        f"track_temperature_idx:={signal_idx(sample, 'fet_temperature')}",  # index 9
+        f"track_current_idx:={signal_idx(sample, 'bus_current')}",
+        f"track_voltage_idx:={signal_idx(sample, 'bus_voltage')}",
+        f"track_temperature_idx:={signal_idx(sample, 'fet_temperature')}",
     ]
 
     cmd = ["xacro", xacro_path, *xacro_args, "-o", output_path]
