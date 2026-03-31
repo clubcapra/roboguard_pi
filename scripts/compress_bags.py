@@ -55,7 +55,7 @@ def compress_bag(bag_dir):
 
     try:
         subprocess.run(
-            ["ros2", "bag", "convert", "--input", bag_dir, "--output-options", config_path],
+            ["ros2", "bag", "convert", "-s", "mcap", "--input", bag_dir, "--output-options", config_path],
             check=True,
             timeout=600,
             stdout=subprocess.DEVNULL,
