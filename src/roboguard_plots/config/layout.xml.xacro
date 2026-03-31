@@ -23,12 +23,12 @@
 
     <Tab tab_name="Tracks" containers="1">
       <Container>
-        <DockSplitter count="3" orientation="-" sizes="0.333001;0.333998;0.333001">
+        <DockSplitter count="4" orientation="-" sizes="0.25;0.25;0.25;0.25">
 
           <!-- Joint velocities -->
-          <DockArea name="...">
+          <DockArea name="Velocities">
             <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
-              <range right="121.020199" bottom="-0.100000" left="116.020458" top="0.100000"/>
+              <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
               <limitY/>
               <curve color="#1f77b4" name="/joint_states/track_fl_j/velocity"/>
               <curve color="#d62728" name="/joint_states/track_fr_j/velocity"/>
@@ -38,7 +38,7 @@
           </DockArea>
 
           <!-- Bus current -->
-          <DockArea name="...">
+          <DockArea name="Bus Current">
             <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
               <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
               <limitY/>
@@ -50,7 +50,7 @@
           </DockArea>
 
           <!-- Bus voltage -->
-          <DockArea name="...">
+          <DockArea name="Bus voltage">
             <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
               <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
               <limitY/>
@@ -62,7 +62,7 @@
           </DockArea>
 
           <!-- FET temperature -->
-          <DockArea name="...">
+          <DockArea name="FET Temperature">
             <plot flip_x="false" mode="TimeSeries" flip_y="false" line_width="1.0">
               <range right="1.000000" bottom="0.000000" left="0.000000" top="1.000000"/>
               <limitY/>
