@@ -21,18 +21,17 @@ def fmt_size(size_bytes) -> str:
         size_bytes /= 1024
     return f"{size_bytes:.2f} TB"
 
+def find_bags(log_root) -> list:
+    """Find all directories containing at least one .mcap file."""
+    bags = []
+    for dirpath, dirnames, filenames in os.walk(log_root):
+        if any(f.endswith(".mcap") for f in filenames):
+            bags.append(dirpath)
+            dirnames.clear()
+    return sorted(bags)
+
 def is_compressed(bag_dir) -> bool:
-    """Check compression status. If no metadata.yaml, assume uncompressed."""
-    metadata_path = os.path.join(bag_dir, "metadata.yaml")
-    if not os.path.exists(metadata_path):
-        return False  # no metadata → assume uncompressed
-    with open(metadata_path) as f:
-        metadata = yaml.safe_load(f)
-    compression_mode = (
-        metadata.get("rosbag2_bagfile_information", {})
-                .get("compression_mode", "")
-    )
-    return compression_mode not in ("", "none")
+    return bag_dir.endswith("_compressed")
 
 def compress_bag(bag_dir):
     ros_log_dir = os.path.dirname(bag_dir)
@@ -95,15 +94,6 @@ def compress_bag(bag_dir):
 
     shutil.rmtree(compressed_dir, ignore_errors=True)
     return False
-
-def find_bags(log_root) -> list:
-    """Find all rosbag2 directories (contain at least one .mcap file)."""
-    bags = []
-    for dirpath, dirnames, filenames in os.walk(log_root):
-        if any(f.endswith(".mcap") for f in filenames):
-            bags.append(dirpath)
-            dirnames.clear()
-    return sorted(bags)
 
 def main():
     log_root = os.path.expanduser("~/.ros/log")
