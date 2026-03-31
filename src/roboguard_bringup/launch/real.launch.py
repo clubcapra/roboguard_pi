@@ -164,7 +164,7 @@ def generate_launch_description():
     delay_joint_state_after_hardware_start = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=start_can_cmd,
-            on_exit=[joint_state_broadcaster_spawner],
+            on_exit=[control_node, joint_state_broadcaster_spawner],
         ),
     )
 
@@ -254,7 +254,6 @@ def generate_launch_description():
             can_shutdown,
             *enable_relays,
             robot_state_publisher,
-            control_node,
             delay_joint_state_after_hardware_start,
             *delayed_controller_nodes,
             twist_mux,
