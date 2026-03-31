@@ -36,7 +36,30 @@ def is_compressed(bag_dir) -> bool:
 def compress_bag(bag_dir):
     ros_log_dir = os.path.dirname(bag_dir)
     compressed_dir = bag_dir + "_compressed"
+    backup_dir = bag_dir + "_backup"
     config_path = os.path.join(ros_log_dir, "compress_config.yaml")
+
+    # Skip empty or zero-byte bags
+    original_size = dir_size(bag_dir)
+    if original_size == 0:
+        print(f"  SKIP: bag is empty (0 bytes).")
+        return False
+
+    # Skip if any mcap file is too small to be valid (mcap minimum is a few hundred bytes)
+    for f in os.listdir(bag_dir):
+        if f.endswith(".mcap") and os.path.getsize(os.path.join(bag_dir, f)) < 512:
+            print(f"  SKIP: {f} is too small to be a valid mcap ({os.path.getsize(os.path.join(bag_dir, f))} bytes).")
+            return False
+
+    # Clean up leftover backup from a previous failed run
+    if os.path.exists(backup_dir):
+        print(f"  Removing leftover backup from previous run...")
+        shutil.rmtree(backup_dir)
+
+    # Clean up leftover compressed dir too
+    if os.path.exists(compressed_dir):
+        print(f"  Removing leftover compressed dir from previous run...")
+        shutil.rmtree(compressed_dir)
 
     convert_config = {
         "output_bags": [{
@@ -50,12 +73,11 @@ def compress_bag(bag_dir):
     with open(config_path, "w") as f:
         yaml.dump(convert_config, f)
 
-    original_size = dir_size(bag_dir)
     print(f"  Compressing ({fmt_size(original_size)})...")
 
     try:
         subprocess.run(
-            ["ros2", "bag", "convert", "-s", "mcap", "--input", bag_dir, "--output-options", config_path],
+            ["ros2", "bag", "convert", "--input", bag_dir, "mcap", "--output-options", config_path],
             check=True,
             timeout=600,
             stdout=subprocess.DEVNULL,
@@ -69,7 +91,6 @@ def compress_bag(bag_dir):
             shutil.rmtree(compressed_dir, ignore_errors=True)
             return False
 
-        backup_dir = bag_dir + "_backup"
         os.rename(bag_dir, backup_dir)
         os.rename(compressed_dir, bag_dir)
         shutil.rmtree(backup_dir)
