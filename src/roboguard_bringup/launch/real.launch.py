@@ -6,6 +6,7 @@ from launch.actions import (
     RegisterEventHandler,
     ExecuteProcess,
     DeclareLaunchArgument,
+    EmitEvent,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -13,6 +14,24 @@ from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitut
 from launch_ros.actions import Node
 from launch.event_handlers import OnProcessExit
 from launch.conditions import UnlessCondition
+from launch.events import Shutdown
+
+handlers = []
+
+def exit_on_crash(node: Node):
+    """Wraps a node so the launch file shuts down if it exits with a non-zero code."""
+    handler = RegisterEventHandler(
+        OnProcessExit(
+            target_action=node,
+            on_exit=lambda event, context: (
+                [EmitEvent(event=Shutdown())]
+                if event.returncode != 0
+                else []
+            ),
+        )
+    )
+    handlers.append(handler)
+    return node
 
 def generate_launch_description():
     IN_DISTROBOX = os.path.exists('/run/host/etc')
@@ -57,7 +76,7 @@ def generate_launch_description():
     
     # Takes the description and joint angles as inputs and publishes
     # the 3D poses of the robot links
-    robot_state_publisher = Node(
+    robot_state_publisher = exit_on_crash(Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         name="robot_state_publisher",
@@ -65,7 +84,7 @@ def generate_launch_description():
         parameters=[
             {"robot_description": robot_desc},
         ],
-    )
+    ))
     
     # Controllers
     controller_nodes = ["odrive_controller", "diff_drive_controller", "ovis_controller"]
@@ -82,14 +101,14 @@ def generate_launch_description():
         ]
     )
 
-    control_node = Node(
+    control_node = exit_on_crash(Node(
         package="controller_manager",
         executable="ros2_control_node",
         output="both",
         parameters=[{"robot_description": robot_desc}, robot_controllers],
-    )
+    ))
     
-    joint_state_broadcaster_spawner = Node(
+    joint_state_broadcaster_spawner = exit_on_crash(Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
@@ -97,7 +116,7 @@ def generate_launch_description():
             "--controller-manager",
             "/controller_manager",
         ],
-    )
+    ))
 
     def create_controller_node(node_name: str, after):
         robot_controller_spawner = Node(
@@ -134,7 +153,7 @@ def generate_launch_description():
     # Can configuration
     can_prefix = 'distrobox-host-exec ' if IN_DISTROBOX else ''
     
-    start_can_cmd = ExecuteProcess(
+    start_can_cmd = exit_on_crash(ExecuteProcess(
         cmd=[[
             f'{can_prefix}sudo ip link set down can0 && '
             f'{can_prefix}sudo ip link set can0 type can bitrate 500000 && '
@@ -143,7 +162,7 @@ def generate_launch_description():
         ]],
         shell=True,
         condition=UnlessCondition(use_mock_odrives),
-    )
+    ))
 
     stop_can_cmd = ExecuteProcess(
         cmd=[[f'{can_prefix}sudo ip link set down can0']],
@@ -159,7 +178,7 @@ def generate_launch_description():
     )
 
     # Twist mux
-    twist_mux = Node(
+    twist_mux = exit_on_crash(Node(
         package="twist_mux",
         executable="twist_mux",
         output="screen",
@@ -170,7 +189,7 @@ def generate_launch_description():
             ("twist_vel", "/rove/twist/cmd_vel"),
             ("tank_vel", "/rove/tank/cmd_vel"),
         },
-    )
+    ))
     
     # Relay messages from /rove/cmd_vel -> /diff_drive_controller/cmd_vel_unstamped
     cmd_vel_relay = Node(
@@ -221,5 +240,6 @@ def generate_launch_description():
             *delayed_controller_nodes,
             twist_mux,
             cmd_vel_relay,
+            *handlers,
         ]
     )
