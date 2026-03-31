@@ -107,7 +107,8 @@ def generate_launch_description():
                 f"{can_prefix}sudo ip link set down can0 && "
                 f"{can_prefix}sudo ip link set can0 type can bitrate 500000 && "
                 f"{can_prefix}sudo ifconfig can0 txqueuelen 1000 && "
-                f"{can_prefix}sudo ip link set up can0"
+                f"{can_prefix}sudo ip link set up can0 && "
+                "sleep 5"
             ]
         ],
         shell=True,
