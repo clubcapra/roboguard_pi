@@ -86,6 +86,33 @@ def generate_launch_description():
         ],
     ))
     
+    # Can configuration
+    can_prefix = 'distrobox-host-exec ' if IN_DISTROBOX else ''
+    
+    start_can_cmd = exit_on_crash(ExecuteProcess(
+        cmd=[[
+            f'{can_prefix}sudo ip link set down can0 && '
+            f'{can_prefix}sudo ip link set can0 type can bitrate 500000 && '
+            f'{can_prefix}sudo ifconfig can0 txqueuelen 1000 && '
+            f'{can_prefix}sudo ip link set up can0'
+        ]],
+        shell=True,
+        condition=UnlessCondition(use_mock_odrives),
+    ))
+
+    stop_can_cmd = ExecuteProcess(
+        cmd=[[f'{can_prefix}sudo ip link set down can0']],
+        shell=True,
+    )
+
+    can_shutdown = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=control_node,
+            on_exit=[stop_can_cmd],
+        ),
+        condition=UnlessCondition(use_mock_odrives),
+    )
+    
     # Controllers
     controller_nodes = ["odrive_controller", "diff_drive_controller", "ovis_controller"]
     controller_conditions = {
@@ -108,6 +135,7 @@ def generate_launch_description():
         parameters=[{"robot_description": robot_desc}, robot_controllers],
     ))
     
+    
     joint_state_broadcaster_spawner = exit_on_crash(Node(
         package="controller_manager",
         executable="spawner",
@@ -117,6 +145,13 @@ def generate_launch_description():
             "/controller_manager",
         ],
     ))
+    
+    delay_joint_state_after_hardware_start = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=start_can_cmd,
+            on_exit=[joint_state_broadcaster_spawner],
+        ),
+    )
 
     def create_controller_node(node_name: str, after):
         robot_controller_spawner = Node(
@@ -149,33 +184,6 @@ def generate_launch_description():
         node, spawner = create_controller_node(controller, last_spawner)
         delayed_controller_nodes.append(node)
         last_spawner = spawner
-
-    # Can configuration
-    can_prefix = 'distrobox-host-exec ' if IN_DISTROBOX else ''
-    
-    start_can_cmd = exit_on_crash(ExecuteProcess(
-        cmd=[[
-            f'{can_prefix}sudo ip link set down can0 && '
-            f'{can_prefix}sudo ip link set can0 type can bitrate 500000 && '
-            f'{can_prefix}sudo ifconfig can0 txqueuelen 1000 && '
-            f'{can_prefix}sudo ip link set up can0'
-        ]],
-        shell=True,
-        condition=UnlessCondition(use_mock_odrives),
-    ))
-
-    stop_can_cmd = ExecuteProcess(
-        cmd=[[f'{can_prefix}sudo ip link set down can0']],
-        shell=True,
-    )
-
-    can_shutdown = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=control_node,
-            on_exit=[stop_can_cmd],
-        ),
-        condition=UnlessCondition(use_mock_odrives),
-    )
 
     # Twist mux
     twist_mux = exit_on_crash(Node(
@@ -236,7 +244,7 @@ def generate_launch_description():
             *enable_relays,
             robot_state_publisher,
             control_node,
-            joint_state_broadcaster_spawner,
+            delay_joint_state_after_hardware_start,
             *delayed_controller_nodes,
             twist_mux,
             cmd_vel_relay,
