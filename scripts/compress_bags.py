@@ -22,26 +22,17 @@ def fmt_size(size_bytes) -> str:
     return f"{size_bytes:.2f} TB"
 
 def is_compressed(bag_dir) -> bool:
-    """Check if any mcap file in the bag dir uses compression via metadata.yaml."""
+    """Check compression status. If no metadata.yaml, assume uncompressed."""
     metadata_path = os.path.join(bag_dir, "metadata.yaml")
     if not os.path.exists(metadata_path):
-        return False
+        return False  # no metadata → assume uncompressed
     with open(metadata_path) as f:
         metadata = yaml.safe_load(f)
-    # If recorded with storage_preset_profile zstd_*, compression field will be set
-    compression = metadata.get("rosbag2_bagfile_information", {}).get("compression_format", "")
-    if compression:
-        return True
-    # For mcap chunk compression, check the storage identifier field
-    for file_info in metadata.get("rosbag2_bagfile_information", {}).get("relative_file_paths", []):
-        if file_info.endswith(".mcap"):
-            mcap_path = os.path.join(bag_dir, file_info)
-            # mcap files compressed with zstd are larger than their chunk headers — 
-            # we rely on metadata storage_identifier instead
-            pass
-    storage_id = metadata.get("rosbag2_bagfile_information", {}).get("storage_identifier", "")
-    compression_mode = metadata.get("rosbag2_bagfile_information", {}).get("compression_mode", "")
-    return compression_mode != "" and compression_mode != "none"
+    compression_mode = (
+        metadata.get("rosbag2_bagfile_information", {})
+                .get("compression_mode", "")
+    )
+    return compression_mode not in ("", "none")
 
 def compress_bag(bag_dir):
     ros_log_dir = os.path.dirname(bag_dir)
@@ -106,12 +97,12 @@ def compress_bag(bag_dir):
     return False
 
 def find_bags(log_root) -> list:
-    """Find all rosbag2 directories (contain metadata.yaml + at least one .mcap)."""
+    """Find all rosbag2 directories (contain at least one .mcap file)."""
     bags = []
     for dirpath, dirnames, filenames in os.walk(log_root):
-        if "metadata.yaml" in filenames and any(f.endswith(".mcap") for f in filenames):
+        if any(f.endswith(".mcap") for f in filenames):
             bags.append(dirpath)
-            dirnames.clear()  # don't recurse into bag subdirs
+            dirnames.clear()
     return sorted(bags)
 
 def main():
