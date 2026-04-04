@@ -54,7 +54,6 @@ def is_being_written(bag_dir) -> bool:
         )
         return result.returncode == 0 and len(result.stdout) > 0
     except FileNotFoundError:
-        # lsof not available, fall back to checking for a lock file
         return os.path.exists(os.path.join(bag_dir, ".recording"))
 
 def find_bags(log_root) -> list:
@@ -71,16 +70,18 @@ def compress_bag(bag_dir):
     backup_dir = bag_dir + "_backup"
     config_path = os.path.join(ros_log_dir, "compress_config.yaml")
 
-    # Determine input path — if no metadata.yaml, pass the .mcap file directly
+    # Determine input args — if no metadata.yaml, pass each .mcap file as a separate --input
     has_metadata = os.path.exists(os.path.join(bag_dir, "metadata.yaml"))
     if not has_metadata:
-        mcap_files = [f for f in os.listdir(bag_dir) if f.endswith(".mcap")]
-        if len(mcap_files) != 1:
-            skip(f"no metadata.yaml and {len(mcap_files)} .mcap files found (expected exactly 1).")
+        mcap_files = sorted([f for f in os.listdir(bag_dir) if f.endswith(".mcap")])
+        if not mcap_files:
+            skip("no .mcap files found.")
             return False
-        input_path = os.path.join(bag_dir, mcap_files[0])
+        input_args = []
+        for f in mcap_files:
+            input_args += ["--input", os.path.join(bag_dir, f), "mcap"]
     else:
-        input_path = bag_dir
+        input_args = ["--input", bag_dir, "mcap"]
 
     # Skip empty bags
     original_size = dir_size(bag_dir)
@@ -120,9 +121,9 @@ def compress_bag(bag_dir):
 
     try:
         subprocess.run(
-            ["ros2", "bag", "convert", "--input", input_path, "mcap", "--output-options", config_path],
+            ["ros2", "bag", "convert"] + input_args + ["--output-options", config_path],
             check=True,
-            timeout=600,
+            timeout=1200,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
         )
@@ -191,10 +192,12 @@ def main():
 
     ok = 0
     fail = 0
+    skipped = 0
     for i, bag in enumerate(to_compress):
         print(f"{BOLD}[{i+1}/{len(to_compress)}]{RESET} {DIM}{bag}{RESET}")
         if is_being_written(bag):
             skip("Bag is currently being written — skipping.")
+            skipped += 1
             continue
         if compress_bag(bag):
             ok += 1
@@ -203,7 +206,8 @@ def main():
 
     print(f"\n{BOLD}Done.{RESET} "
           f"{GREEN}{ok} compressed{RESET}, "
-          f"{RED}{fail} failed{RESET}.")
+          f"{RED}{fail} failed{RESET}, "
+          f"{YELLOW}{skipped} skipped{RESET}.")
 
 if __name__ == "__main__":
     main()
