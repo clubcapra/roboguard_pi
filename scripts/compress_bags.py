@@ -44,6 +44,19 @@ def is_compressed(bag_dir) -> bool:
         for f in os.listdir(bag_dir)
     )
 
+def is_being_written(bag_dir) -> bool:
+    """Check if any mcap file in the bag dir is currently open by another process."""
+    try:
+        result = subprocess.run(
+            ["lsof", "+D", bag_dir],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        return result.returncode == 0 and len(result.stdout) > 0
+    except FileNotFoundError:
+        # lsof not available, fall back to checking for a lock file
+        return os.path.exists(os.path.join(bag_dir, ".recording"))
+
 def find_bags(log_root) -> list:
     bags = []
     for dirpath, dirnames, filenames in os.walk(log_root):
@@ -161,13 +174,15 @@ def main():
         skip("No bags found.")
         return
 
-    to_compress = [b for b in bags if not is_compressed(b)]
+    to_compress = [b for b in bags if not is_compressed(b) and dir_size(b) != 0]
     already_compressed = [b for b in bags if is_compressed(b)]
+    already_empty = [b for b in bags if dir_size(b) == 0]
 
     print(
         f"{BOLD}Found {len(bags)} bag(s):{RESET} "
         f"{YELLOW}{len(to_compress)} uncompressed{RESET}, "
-        f"{GREEN}{len(already_compressed)} already compressed{RESET}.\n"
+        f"{GREEN}{len(already_compressed)} already compressed{RESET}, "
+        f"{CYAN}{len(already_empty)} empty{RESET}.\n"
     )
 
     if not to_compress:
@@ -178,6 +193,9 @@ def main():
     fail = 0
     for i, bag in enumerate(to_compress):
         print(f"{BOLD}[{i+1}/{len(to_compress)}]{RESET} {DIM}{bag}{RESET}")
+        if is_being_written(bag):
+            skip("Bag is currently being written — skipping.")
+            continue
         if compress_bag(bag):
             ok += 1
         else:
