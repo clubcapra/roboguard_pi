@@ -1,6 +1,6 @@
 [Unit]
 Description=Compresses the rosbags
-After=network.target
+After=multi-user.target
 
 [Service]
 Type=oneshot

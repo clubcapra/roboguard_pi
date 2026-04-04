@@ -58,7 +58,6 @@ systemctl --user daemon-reload
 systemctl --user enable roboguard_launch.service
 systemctl --user restart roboguard_launch.service
 systemctl --user enable roboguard_compress.service
-systemctl --user restart roboguard_compress.service
 
 
 echo "Done! Check status with: systemctl --user status roboguard_launch.service"
