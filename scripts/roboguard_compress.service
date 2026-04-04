@@ -5,7 +5,7 @@ After=default.target
 [Service]
 Type=oneshot
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=/usr/bin/distrobox-enter ros-ubuntu --no-tty -- /bin/bash -c "source /home/capra/roboguard_pi/install/setup.bash && python /home/capra/roboguard_pi/scripts/compress_bags.py /var/log/ros2"
+ExecStart=/usr/bin/distrobox-enter ros-ubuntu --no-tty -- /bin/bash -c "source /home/capra/roboguard_pi/install/setup.bash && python3 /home/capra/roboguard_pi/scripts/compress_bags.py /var/log/ros2"
 StandardOutput=journal
 StandardError=journal
 
