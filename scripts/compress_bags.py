@@ -37,7 +37,12 @@ def fmt_size(size_bytes) -> str:
     return f"{size_bytes:.2f} TB"
 
 def is_compressed(bag_dir) -> bool:
-    return bag_dir.endswith("_compressed")
+    if bag_dir.endswith("_compressed"):
+        return True
+    return any(
+        f.endswith(".mcap") and "compressed" in f
+        for f in os.listdir(bag_dir)
+    )
 
 def find_bags(log_root) -> list:
     bags = []
