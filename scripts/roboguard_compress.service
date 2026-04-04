@@ -1,4 +1,3 @@
-cat > ~/.config/systemd/user/roboguard_compress.service << 'EOF'
 [Unit]
 Description=Compresses the rosbags
 After=default.target
@@ -12,8 +11,3 @@ StandardError=journal
 
 [Install]
 WantedBy=default.target
-EOF
-
-systemctl --user daemon-reload
-systemctl --user start roboguard_compress.service
-journalctl --user -u roboguard_compress.service -f
