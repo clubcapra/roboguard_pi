@@ -1,0 +1,10 @@
+[Unit]
+Description=Compresses the rosbags
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/distrobox enter ros-ubuntu -- /bin/bash -c "source /home/capra/roboguard_pi/install/setup.bash && /home/capra/roboguard_pi/scripts/compress_bags.py /var/log/ros2"
+
+[Install]
+WantedBy=default.target
