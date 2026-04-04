@@ -1,12 +1,19 @@
+cat > ~/.config/systemd/user/roboguard_compress.service << 'EOF'
 [Unit]
 Description=Compresses the rosbags
-After=multi-user.target
+After=default.target
 
 [Service]
 Type=oneshot
-Environment="HOME=/home/capra"
-Environment="XDG_RUNTIME_DIR=/run/user/1000"
-ExecStart=distrobox-enter ros-ubuntu -- /bin/bash -c "source /home/capra/roboguard_pi/install/setup.bash && /home/capra/roboguard_pi/scripts/compress_bags.py /var/log/ros2"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/usr/bin/distrobox-enter ros-ubuntu --no-tty -- /bin/bash -c "source /home/capra/roboguard_pi/install/setup.bash && python /home/capra/roboguard_pi/scripts/compress_bags.py /var/log/ros2"
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user start roboguard_compress.service
+journalctl --user -u roboguard_compress.service -f
