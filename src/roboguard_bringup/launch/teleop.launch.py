@@ -1,11 +1,21 @@
+import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     # Get the launch directory
     pkg_roboguard_bringup = get_package_share_directory("roboguard_bringup")
+    pkg_input_manager = get_package_share_directory("input_manager")
+    
+    default_config = os.path.join(pkg_input_manager, 'config', 'default_config.yaml')
+    
+    # Parameters
+    input_config_dec = DeclareLaunchArgument("input_config", default_value=default_config)
+    input_config = LaunchConfiguration("input_config")
     
     joy_config_file = pkg_roboguard_bringup + "/config/teleop_params.yaml"
     
@@ -109,8 +119,20 @@ def generate_launch_description():
         ],
     )
     
+    # input_manager
+    input_manager = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_input_manager, "launch", "input_manager.launch.py"),
+        ),
+        launch_arguments=[
+            ("config", input_config),
+            ("no_gui", "true"),
+        ]
+    )
+    
     return LaunchDescription(
         [
+            input_config_dec,
             joy_mux,
             scheme_selector,
             teleop_mapper,
@@ -119,5 +141,6 @@ def generate_launch_description():
             flippers_teleop,
             enable_node,
             estop_control,
+            input_manager,
         ]
     )
