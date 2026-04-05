@@ -14,7 +14,7 @@ src/*
 !src/capra_teleop_mapper
 !src/joy_mux
 !src/ovis_ros2
-!src/micro_ros_setup
+!src/input_manager
 
 # Ignore Python bytecodes
 __pycache__/
