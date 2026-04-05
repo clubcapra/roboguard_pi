@@ -34,9 +34,11 @@ RUN apt-get update && apt-get install -y \
     lsb-release \
     gnupg \
     curl \
-    python3-evdev
+    python3-evdev \
+    libboost-all-dev
 
 # evdev is required for input_manager
+# libboost-all-dev is required for ovis
 
 # Change user
 RUN chown $USER_UID:$USER_GID /workspace/$USERNAME
