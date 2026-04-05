@@ -2,8 +2,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
@@ -120,13 +119,19 @@ def generate_launch_description():
     )
     
     # input_manager
-    input_manager = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(pkg_input_manager, "launch", "input_manager.launch.py"),
-        ),
-        launch_arguments=[
-            ("config", input_config),
-            ("no_gui", "true"),
+    input_manager = Node(
+        package='input_manager',
+        executable='input_manager',
+        name='input_manager',
+        output='screen',
+        parameters=[{
+            'config': input_config,
+            'no_gui': True,
+        }],
+        remappings=[
+            ("/joy_input/steam", "/rove/steamdeck/joy"),
+            ("/joy_input/xbox_bl_controller_laptop", "/rove/xbox/bluetooth/joy"),
+            ("/joy_input/xbox_usb_controller_laptop", "/rove/xbox/usb/joy"),
         ]
     )
     
