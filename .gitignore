@@ -3,9 +3,18 @@ build/
 log/
 install/
 
-# Ignore everything in src except rove_*
+# Ignore everything in src except local and submodule packages
 src/*
 !src/roboguard_*
+!src/better_odrive
+!src/capra_control_msgs
+!src/capra_flippers_teleop
+!src/capra_joy_to_bool
+!src/capra_tank_twist
+!src/capra_teleop_mapper
+!src/joy_mux
+!src/ovis_ros2
+!src/micro_ros_setup
 
 # Ignore Python bytecodes
 __pycache__/
