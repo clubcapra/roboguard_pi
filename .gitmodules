@@ -30,3 +30,7 @@
 	path = src/ovis_ros2
 	url = https://github.com/clubcapra/ovis_ros2.git
 	branch = master
+[submodule "src/input_manager"]
+	path = src/input_manager
+	url = https://github.com/clubcapra/input_manager.git
+	branch = master

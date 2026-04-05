@@ -1,22 +1,18 @@
 /joy_mux:
   ros__parameters:
     topics:
-      steamdeck_lora:
-        topic   : rove/lora/steamdeck/joy
+      steamdeck:
+        topic   : rove/steamdeck/joy
         timeout : 0.5
-        priority: 101
-      xbox_lora:
-        topic   : rove/lora/xbox/joy
+        priority: 200
+      xbox_bt:
+        topic   : rove/xbox/bluetooth/joy
         timeout : 0.5
         priority: 100
-      steamdeck_uhard:
-        topic   : rove/uhard/steamdeck/joy
+      xbox_usb:
+        topic   : rove/xbox/usb/joy
         timeout : 0.5
-        priority: 91
-      xbox_uhard:
-        topic   : rove/uhard/xbox/joy
-        timeout : 0.5
-        priority: 90
+        priority: 101
       others:
         topic   : rove/other/joy
         timeout : 0.5
