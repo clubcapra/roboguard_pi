@@ -101,7 +101,7 @@ def generate_launch_description():
         parameters=[joy_config_file],
         remappings=[
             ("/enable_node/joy", "/rove/joy"),
-            ("/enable_node/bool", "/rove/enable"),
+            ("/enable_node/bool", "/rove/enable_stamped"),
         ],
     )
     
@@ -114,7 +114,7 @@ def generate_launch_description():
         parameters=[joy_config_file],
         remappings=[
             ("/estop_control/joy", "/rove/joy"),
-            ("/estop_control/bool", "/rove/estop"),
+            ("/estop_control/bool", "/rove/estop_stamped"),
         ],
     )
     

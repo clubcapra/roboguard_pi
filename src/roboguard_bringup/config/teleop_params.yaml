@@ -74,6 +74,7 @@
   ros__parameters:
     button1_index: 8 # SUPER (xbox/steamdeck button)  [ESTOP ON]
     button2_index: 1 # B                              [ESTOP OFF]
+    use_stamped: true
 
 /enable_node:
   ros__parameters:
