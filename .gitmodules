@@ -34,3 +34,7 @@
 	path = src/input_manager
 	url = https://github.com/clubcapra/input_manager.git
 	branch = master
+[submodule "src/capra_twist_mux"]
+	path = src/capra_twist_mux
+	url = git@github.com:IliTheButterfly/capra_twist_mux.git
+	branch = codex/change-package-name-to-capra_twist_mux
