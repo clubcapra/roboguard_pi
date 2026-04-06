@@ -61,7 +61,7 @@ diff_drive_controller:
     # publish_limited_velocity: true
     # publish_cmd: true
     # velocity_rolling_window_size: 10
-    use_stamped_vel: false
+    use_stamped_vel: true
 
     # Maybe we should set this to false since the max velocity is set from ODrive config
     linear.x.has_velocity_limits: true

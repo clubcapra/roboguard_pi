@@ -52,7 +52,7 @@
       x: 2.0
       y: 0.0
       z: 0.0
-    publish_stamped_twist: false
+    publish_stamped_twist: true
 
 /tank_twist_node:
   ros__parameters:
@@ -68,7 +68,7 @@
     enable_button: 5 # RB
     speed_scale: 167.0
 
-    publish_stamped: false
+    publish_stamped: true
 
 /estop_control:
   ros__parameters:
