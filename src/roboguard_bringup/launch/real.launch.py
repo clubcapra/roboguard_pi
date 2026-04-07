@@ -222,10 +222,9 @@ def generate_launch_description():
             output="screen",
             parameters=[pkg_roboguard_bringup + "/config/twist_mux.yaml"],
             remappings={
-                ("/cmd_vel_out", "/rove/cmd_vel"),
-                ("nav_vel", "/rove/nav/cmd_vel"),
-                ("twist_vel", "/rove/twist/cmd_vel"),
-                ("tank_vel", "/rove/tank/cmd_vel"),
+                ("/cmd_vel_out", "/rove/robot/cmd_vel"),
+                ("nav_vel", "/rove/robot/nav/cmd_vel"),
+                ("remote_vel", "/rove/robot/comm/cmd_vel"),
             },
         )
     )
@@ -236,7 +235,7 @@ def generate_launch_description():
         executable="relay",
         name="diff_drive_remap",
         output="screen",
-        arguments=("/rove/cmd_vel", "/diff_drive_controller/cmd_vel"),
+        arguments=("/rove/robot/cmd_vel", "/diff_drive_controller/cmd_vel"),
     )
 
     # Relay messages for odrive enables
@@ -246,11 +245,25 @@ def generate_launch_description():
             executable="relay",
             name=f"track_{track}_remap",
             output="screen",
-            arguments=("/rove/enable", f"/odrive_controller/enable/track_{track}_j"),
+            arguments=("/rove/robot/enable", f"/odrive_controller/enable/track_{track}_j"),
         )
         for track in ["rl", "rr", "fl", "fr"]
     ]
-
+    
+    # Demuxes
+    demux_config_file = os.path.join(pkg_roboguard_bringup, "config", "robot_demux.yaml")
+    demuxes = ["robot_cmd_vel_demux", "robot_enable_demux", "robot_estop_demux"]
+    demux_nodes = [
+        Node(
+            package="capra_stamp_demux",
+            executable="stamp_demux",
+            name=name,
+            parameters=[demux_config_file],
+            output="screen",
+        )
+        for name in demuxes
+    ]
+    
     # Rosbag logging
     rosbag_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -284,4 +297,6 @@ def generate_launch_description():
         *[create_controller(c) for c in controller_nodes],
 
         *enable_relays,
+        
+        *demux_nodes,
     ])

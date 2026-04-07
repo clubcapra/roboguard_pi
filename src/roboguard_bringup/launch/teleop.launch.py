@@ -25,7 +25,7 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy_mux_topic", "/rove/remote/joy"),
+            ("/joy_mux_topic", "/rove/station/joy"),
         ],
     )
     
@@ -37,8 +37,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/scheme_selector/joy", "/rove/remote/joy"),
-            ("/scheme_selector/bool", "/rove/remote/teleop_select"),
+            ("/scheme_selector/joy", "/rove/station/joy"),
+            ("/scheme_selector/bool", "/rove/station/teleop_select"),
         ],
     )
     
@@ -49,10 +49,10 @@ def generate_launch_description():
         name="scheme_mapper",
         output="screen",
         remappings=[
-            ("/joy1", "/rove/remote/twist/joy"),
-            ("/joy2", "/rove/remote/tank/joy"),
-            ("/joy_select", "/rove/remote/teleop_select"),
-            ("/joy", "/rove/remote/joy"),
+            ("/joy1", "/rove/station/twist/joy"),
+            ("/joy2", "/rove/station/tank/joy"),
+            ("/joy_select", "/rove/station/teleop_select"),
+            ("/joy", "/rove/station/joy"),
         ],
     )
     
@@ -63,8 +63,8 @@ def generate_launch_description():
         name="teleop_twist_joy_node",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy", "/rove/remote/twist/joy"),
-            ("/cmd_vel", "/rove/remote/twist/cmd_vel"),
+            ("/joy", "/rove/station/twist/joy"),
+            ("/cmd_vel", "/rove/station/twist/cmd_vel"),
         ],
     )
     
@@ -75,8 +75,8 @@ def generate_launch_description():
         name="tank_twist_node",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy", "/rove/remote/tank/joy"),
-            ("/cmd_vel", "/rove/remote/tank/cmd_vel"),
+            ("/joy", "/rove/station/tank/joy"),
+            ("/cmd_vel", "/rove/station/tank/cmd_vel"),
         ],
     )
     
@@ -87,8 +87,8 @@ def generate_launch_description():
         name="flippers_teleop",
         parameters=[joy_config_file],
         remappings=[
-            ("/flippers_teleop/joy", "/rove/remote/joy"),
-            ("/flippers_teleop/flippers", "/rove/remote/teleop/flippers_cmd"),
+            ("/flippers_teleop/joy", "/rove/station/joy"),
+            ("/flippers_teleop/flippers", "/rove/to_robot/teleop/flippers_cmd"),
         ],
     )
 
@@ -100,8 +100,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/enable_node/joy", "/rove/remote/joy"),
-            ("/enable_node/bool", "/rove/remote/enable_stamped"),
+            ("/enable_node/joy", "/rove/station/joy"),
+            ("/enable_node/bool", "/rove/to_robot/enable_stamped"),
         ],
     )
     
@@ -113,8 +113,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/estop_control/joy", "/rove/remote/joy"),
-            ("/estop_control/bool", "/rove/remote/estop_stamped"),
+            ("/estop_control/joy", "/rove/station/joy"),
+            ("/estop_control/bool", "/rove/to_robot/estop_stamped"),
         ],
     )
     
@@ -129,11 +129,25 @@ def generate_launch_description():
             'no_gui': True,
         }],
         remappings=[
-            ("/joy_input/steam", "/rove/remote/steamdeck/joy"),
-            ("/joy_input/xbox_bl_controller_laptop", "/rove/remote/xbox/bluetooth/joy"),
-            ("/joy_input/xbox_usb_controller_laptop", "/rove/remote/xbox/usb/joy"),
+            ("/joy_input/steam", "/rove/station/steamdeck/joy"),
+            ("/joy_input/xbox_bl_controller_laptop", "/rove/station/xbox/bluetooth/joy"),
+            ("/joy_input/xbox_usb_controller_laptop", "/rove/station/xbox/usb/joy"),
         ]
     )
+    
+    # Demuxes
+    demux_config_file = os.path.join(pkg_roboguard_bringup, "config", "station_demux.yaml")
+    demuxes = ["station_cmd_vel_demux"]
+    demux_nodes = [
+        Node(
+            package="capra_stamp_demux",
+            executable="stamp_demux",
+            name=name,
+            parameters=[demux_config_file],
+            output="screen",
+        )
+        for name in demuxes
+    ]
     
     return LaunchDescription(
         [
@@ -147,5 +161,6 @@ def generate_launch_description():
             enable_node,
             estop_control,
             input_manager,
+            *demux_nodes,
         ]
     )

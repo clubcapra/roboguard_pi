@@ -2,19 +2,19 @@
   ros__parameters:
     topics:
       steamdeck:
-        topic   : rove/remote/steamdeck/joy
+        topic   : rove/station/steamdeck/joy
         timeout : 0.5
         priority: 200
       xbox_bt:
-        topic   : rove/remote/xbox/bluetooth/joy
+        topic   : rove/station/xbox/bluetooth/joy
         timeout : 0.5
         priority: 100
       xbox_usb:
-        topic   : rove/remote/xbox/usb/joy
+        topic   : rove/station/xbox/usb/joy
         timeout : 0.5
         priority: 101
       others:
-        topic   : rove/remote/other/joy
+        topic   : rove/station/other/joy
         timeout : 0.5
         priority: 10
 
@@ -79,6 +79,7 @@
 /enable_node:
   ros__parameters:
     button1_index: 5 # RB
+    use_stamped: true
 
 /front_flippers_enable_node:
   ros__parameters:
