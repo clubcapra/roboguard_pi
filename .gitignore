@@ -16,6 +16,7 @@ src/*
 !src/ovis_ros2
 !src/input_manager
 !src/capra_twist_mux
+!src/capra_stamp_demux
 
 # Ignore Python bytecodes
 __pycache__/
