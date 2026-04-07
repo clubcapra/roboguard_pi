@@ -1,0 +1,12 @@
+/remote_cmd_vel_demux:
+  ros__parameters:
+    input_type: geometry_msgs/msg/TwistStamped
+    
+    input_topics:
+      - /rove/remote/tank/cmd_vel
+      - /rove/remote/twist/cmd_vel
+    output_topic: /rove/remote/cmd_vel
+    stale_delay: 0.1
+    qos_depth: 1
+    qos_reliability: best_effort
+    qos_durability: volatile

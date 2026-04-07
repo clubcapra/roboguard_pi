@@ -2,19 +2,19 @@
   ros__parameters:
     topics:
       steamdeck:
-        topic   : rove/steamdeck/joy
+        topic   : rove/remote/steamdeck/joy
         timeout : 0.5
         priority: 200
       xbox_bt:
-        topic   : rove/xbox/bluetooth/joy
+        topic   : rove/remote/xbox/bluetooth/joy
         timeout : 0.5
         priority: 100
       xbox_usb:
-        topic   : rove/xbox/usb/joy
+        topic   : rove/remote/xbox/usb/joy
         timeout : 0.5
         priority: 101
       others:
-        topic   : rove/other/joy
+        topic   : rove/remote/other/joy
         timeout : 0.5
         priority: 10
 

@@ -25,7 +25,7 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy_mux_topic", "/rove/joy"),
+            ("/joy_mux_topic", "/rove/remote/joy"),
         ],
     )
     
@@ -37,8 +37,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/scheme_selector/joy", "/rove/joy"),
-            ("/scheme_selector/bool", "/rove/teleop_select"),
+            ("/scheme_selector/joy", "/rove/remote/joy"),
+            ("/scheme_selector/bool", "/rove/remote/teleop_select"),
         ],
     )
     
@@ -49,10 +49,10 @@ def generate_launch_description():
         name="scheme_mapper",
         output="screen",
         remappings=[
-            ("/joy1", "/rove/twist/joy"),
-            ("/joy2", "/rove/tank/joy"),
-            ("/joy_select", "/rove/teleop_select"),
-            ("/joy", "/rove/joy"),
+            ("/joy1", "/rove/remote/twist/joy"),
+            ("/joy2", "/rove/remote/tank/joy"),
+            ("/joy_select", "/rove/remote/teleop_select"),
+            ("/joy", "/rove/remote/joy"),
         ],
     )
     
@@ -63,8 +63,8 @@ def generate_launch_description():
         name="teleop_twist_joy_node",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy", "/rove/twist/joy"),
-            ("/cmd_vel", "/rove/twist/cmd_vel"),
+            ("/joy", "/rove/remote/twist/joy"),
+            ("/cmd_vel", "/rove/remote/twist/cmd_vel"),
         ],
     )
     
@@ -75,8 +75,8 @@ def generate_launch_description():
         name="tank_twist_node",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy", "/rove/tank/joy"),
-            ("/cmd_vel", "/rove/tank/cmd_vel"),
+            ("/joy", "/rove/remote/tank/joy"),
+            ("/cmd_vel", "/rove/remote/tank/cmd_vel"),
         ],
     )
     
@@ -87,8 +87,8 @@ def generate_launch_description():
         name="flippers_teleop",
         parameters=[joy_config_file],
         remappings=[
-            ("/flippers_teleop/joy", "/rove/joy"),
-            ("/flippers_teleop/flippers", "/rove/teleop/flippers_cmd"),
+            ("/flippers_teleop/joy", "/rove/remote/joy"),
+            ("/flippers_teleop/flippers", "/rove/remote/teleop/flippers_cmd"),
         ],
     )
 
@@ -100,8 +100,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/enable_node/joy", "/rove/joy"),
-            ("/enable_node/bool", "/rove/enable_stamped"),
+            ("/enable_node/joy", "/rove/remote/joy"),
+            ("/enable_node/bool", "/rove/remote/enable_stamped"),
         ],
     )
     
@@ -113,8 +113,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/estop_control/joy", "/rove/joy"),
-            ("/estop_control/bool", "/rove/estop_stamped"),
+            ("/estop_control/joy", "/rove/remote/joy"),
+            ("/estop_control/bool", "/rove/remote/estop_stamped"),
         ],
     )
     
@@ -129,9 +129,9 @@ def generate_launch_description():
             'no_gui': True,
         }],
         remappings=[
-            ("/joy_input/steam", "/rove/steamdeck/joy"),
-            ("/joy_input/xbox_bl_controller_laptop", "/rove/xbox/bluetooth/joy"),
-            ("/joy_input/xbox_usb_controller_laptop", "/rove/xbox/usb/joy"),
+            ("/joy_input/steam", "/rove/remote/steamdeck/joy"),
+            ("/joy_input/xbox_bl_controller_laptop", "/rove/remote/xbox/bluetooth/joy"),
+            ("/joy_input/xbox_usb_controller_laptop", "/rove/remote/xbox/usb/joy"),
         ]
     )
     
