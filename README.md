@@ -105,6 +105,14 @@ In order to control the robot, you need to run the teleop nodes:
 ros2 launch roboguard_bringup teleop.launch.py
 ```
 
+## Topic naming convention
+
+Topics that start with `/rove` are topics that are handled.
+Topics that start with `/rove/station` are topics that should not be listened to from the robot, they should stay on the station (control station).
+topics that start with `/rove/robot` are topics that should stay on the robot.
+Topics that start with `/rove/to_robot` are topics that should be sent from station to robot.
+Topics that start with `/rove/to_station` are topics that should be sent from robot to station.
+
 ## Contributing
 
 Before pushing your code, you should try to deploy it by using:
