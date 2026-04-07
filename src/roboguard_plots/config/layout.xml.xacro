@@ -16,7 +16,7 @@
   <!-- MACROS                                                -->
   <!-- ===================================================== -->
   <xacro:macro name="iface" params="color idx vidx">
-    <curve color="${color}" name="/dynamic_joint_states/interface_values[${idx}]/values[${vidx}]"/>
+    <curve color="${color}" name="/rove/station/dynamic_joint_states/interface_values[${idx}]/values[${vidx}]"/>
   </xacro:macro>
 
   <tabbed_widget parent="main_window" name="Main Window">

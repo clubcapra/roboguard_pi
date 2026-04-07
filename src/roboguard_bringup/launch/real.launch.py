@@ -252,7 +252,7 @@ def generate_launch_description():
     
     # Demuxes
     demux_config_file = os.path.join(pkg_roboguard_bringup, "config", "robot_demux.yaml")
-    demuxes = ["robot_cmd_vel_demux", "robot_enable_demux", "robot_estop_demux"]
+    demuxes = ["robot_cmd_vel_demux", "robot_enable_demux", "robot_estop_demux", "robot_flippers_demux"]
     demux_nodes = [
         Node(
             package="capra_stamp_demux",
@@ -270,6 +270,18 @@ def generate_launch_description():
             os.path.join(pkg_roboguard_bringup, "launch", "rosbag.launch.py"),
         ),
         condition=IfCondition(with_rosbag),
+    )
+    
+    # UDP bridge
+    udp_bridge_config_file = os.path.join(pkg_roboguard_bringup, "config", "udp_bridge.yaml")
+    udp_bridge = exit_on_crash(
+        Node(
+            package="capra_udp_bridge",
+            executable="udp_bridge_node",
+            name="robot_udb_bridge",
+            output="screen",
+            parameters=[udp_bridge_config_file],
+        )
     )
 
     return LaunchDescription([
@@ -299,4 +311,6 @@ def generate_launch_description():
         *enable_relays,
         
         *demux_nodes,
+        
+        udp_bridge,
     ])

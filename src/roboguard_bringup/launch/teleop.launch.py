@@ -137,7 +137,7 @@ def generate_launch_description():
     
     # Demuxes
     demux_config_file = os.path.join(pkg_roboguard_bringup, "config", "station_demux.yaml")
-    demuxes = ["station_cmd_vel_demux"]
+    demuxes = ["station_cmd_vel_demux", "station_joint_states_demux", "station_dynamic_joint_states_demux"]
     demux_nodes = [
         Node(
             package="capra_stamp_demux",
@@ -148,6 +148,16 @@ def generate_launch_description():
         )
         for name in demuxes
     ]
+    
+    # UDP bridge
+    udp_bridge_config_file = os.path.join(pkg_roboguard_bringup, "config", "udp_bridge.yaml")
+    udp_bridge = Node(
+        package="capra_udp_bridge",
+        executable="udp_bridge_node",
+        name="station_udb_bridge",
+        output="screen",
+        parameters=[udp_bridge_config_file],
+    )
     
     return LaunchDescription(
         [
@@ -162,5 +172,6 @@ def generate_launch_description():
             estop_control,
             input_manager,
             *demux_nodes,
+            udp_bridge,
         ]
     )

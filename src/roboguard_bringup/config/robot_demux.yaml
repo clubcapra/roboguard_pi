@@ -37,3 +37,16 @@
     qos_depth: 1
     qos_reliability: best_effort
     qos_durability: volatile
+
+/robot_flippers_demux:
+  ros__parameters:
+    input_type: capra_control_msgs/msg/FlippersStamped
+
+    input_topics:
+      - /rove/to_robot/flippers_cmd
+      - /rove/lora/flippers_cmd
+    output_topic: /rove/robot/flippers_cmd
+    stale_delay: 0.5
+    qos_depth: 1
+    qos_reliability: best_effort
+    qos_durability: volatile
