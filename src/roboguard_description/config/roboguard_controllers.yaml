@@ -37,8 +37,9 @@ odrive_controller:
 
 diff_drive_controller:
   ros__parameters:
-    right_wheel_names: ["track_fr_j", "track_rr_j"]
-    left_wheel_names: ["track_fl_j", "track_rl_j"]
+    # Reversed since we are currently running rove backwards
+    left_wheel_names: ["track_fr_j", "track_rr_j"]
+    right_wheel_names: ["track_fl_j", "track_rl_j"]
 
     wheel_separation: 0.230
     wheel_radius: 0.11
