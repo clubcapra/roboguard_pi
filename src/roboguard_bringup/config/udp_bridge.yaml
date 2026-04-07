@@ -26,18 +26,6 @@
       port: 6103
       direction: out
 
-    joint_states:
-      topic: /rove/station/lora/joint_states
-      type: sensor_msgs/msg/JointState
-      port: 6200
-      direction: in
-
-    dynamic_joint_states:
-      topic: /rove/station/lora/dynamic_joint_states
-      type: control_msgs/msg/DynamicJointState
-      port: 6201
-      direction: in
-
 /robot_udb_bridge:
   ros__parameters:
     proxy_ip: "192.168.2.12"
@@ -65,16 +53,4 @@
       type: capra_control_msgs/msg/FlippersStamped
       port: 6103
       direction: in
-    
-    joint_states:
-      topic: /joint_states
-      type: sensor_msgs/msg/JointState
-      port: 6200
-      direction: out
-      
-    dynamic_joint_states:
-      topic: /dynamic_joint_states
-      type: control_msgs/msg/DynamicJointState
-      port: 6201
-      direction: out
     

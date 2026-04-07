@@ -11,27 +11,3 @@
     qos_depth: 1
     qos_reliability: best_effort
     qos_durability: volatile
-
-/station_joint_states_demux:
-  ros__parameters:
-    input_type: sensor_msgs/msg/JointState
-
-    input_topics:
-      - /joint_states
-      - /rove/station/lora/joint_states
-    output_topic: /rove/station/joint_states
-    qos_depth: 10
-    qos_reliability: best_effort
-    qos_durability: volatile
-
-/station_dynamic_joint_states_demux:
-  ros__parameters:
-    input_type: control_msgs/msg/DynamicJointState
-
-    input_topics:
-      - /dynamic_joint_states
-      - /rove/station/lora/dynamic_joint_states
-    output_topic: /rove/station/dynamic_joint_states
-    qos_depth: 10
-    qos_reliability: best_effort
-    qos_durability: volatile

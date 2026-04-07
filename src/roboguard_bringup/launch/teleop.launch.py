@@ -137,7 +137,7 @@ def generate_launch_description():
     
     # Demuxes
     demux_config_file = os.path.join(pkg_roboguard_bringup, "config", "station_demux.yaml")
-    demuxes = ["station_cmd_vel_demux", "station_joint_states_demux", "station_dynamic_joint_states_demux"]
+    demuxes = ["station_cmd_vel_demux"]
     demux_nodes = [
         Node(
             package="capra_stamp_demux",
