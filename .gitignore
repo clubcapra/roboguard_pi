@@ -17,6 +17,7 @@ src/*
 !src/input_manager
 !src/capra_twist_mux
 !src/capra_stamp_demux
+!src/capra_udp_bridge
 
 # Ignore Python bytecodes
 __pycache__/
