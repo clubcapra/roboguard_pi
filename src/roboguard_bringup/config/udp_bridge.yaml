@@ -1,6 +1,6 @@
 /station_udb_bridge:
   ros__parameters:
-    proxy_ip: "192.168.2.13"
+    proxy_ip: "0.0.0.0"
 
     cmd_vel:
       topic: /rove/to_robot/cmd_vel
@@ -28,7 +28,7 @@
 
 /robot_udb_bridge:
   ros__parameters:
-    proxy_ip: "192.168.2.12"
+    proxy_ip: "0.0.0.0"
 
     cmd_vel:
       topic: /rove/robot/lora/cmd_vel
