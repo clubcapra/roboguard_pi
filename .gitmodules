@@ -36,9 +36,9 @@
 	branch = master
 [submodule "src/capra_twist_mux"]
 	path = src/capra_twist_mux
-	url = git@github.com:IliTheButterfly/capra_twist_mux.git
+	url = https://github.com/IliTheButterfly/capra_twist_mux.git
 	branch = humble
 [submodule "src/capra_stamp_demux"]
 	path = src/capra_stamp_demux
-	url = git@github.com:clubcapra/capra_stamp_demux.git
+	url = https://github.com/clubcapra/capra_stamp_demux.git
 	branch = main
