@@ -129,7 +129,7 @@ def generate_launch_description():
             'no_gui': True,
         }],
         remappings=[
-            ("/joy_input/steam", "/rove/station/steamdeck/joy"),
+            ("/joy_input/steamdeck", "/rove/station/steamdeck/joy"),
             ("/joy_input/xbox_bl_controller_laptop", "/rove/station/xbox/bluetooth/joy"),
             ("/joy_input/xbox_usb_controller_laptop", "/rove/station/xbox/usb/joy"),
         ]
