@@ -32,7 +32,7 @@
 
     cmd_vel:
       topic: /rove/robot/lora/cmd_vel
-      type: geometry_msgs/msg/Twist
+      type: geometry_msgs/msg/TwistStamped
       port: 6100
       direction: in
 
