@@ -5,7 +5,7 @@
     
     input_topics:
       - /rove/to_robot/cmd_vel
-      - /rove/lora/cmd_vel
+      - /rove/robot/lora/cmd_vel
     output_topic: /rove/robot/comm/cmd_vel
     stale_delay: 0.5
     qos_depth: 1
@@ -18,7 +18,7 @@
     output_type: std_msgs/msg/Bool
     input_topics:
       - /rove/to_robot/enable_stamped
-      - /rove/lora/enable_stamped
+      - /rove/robot/lora/enable_stamped
     output_topic: /rove/robot/enable
     stale_delay: 0.5
     qos_depth: 1
@@ -31,7 +31,7 @@
     output_type: std_msgs/msg/Bool
     input_topics:
       - /rove/to_robot/estop_stamped
-      - /rove/lora/estop_stamped
+      - /rove/robot/lora/estop_stamped
     output_topic: /rove/robot/estop
     stale_delay: 0.5
     qos_depth: 1
@@ -44,7 +44,7 @@
 
     input_topics:
       - /rove/to_robot/flippers_cmd
-      - /rove/lora/flippers_cmd
+      - /rove/robot/lora/flippers_cmd
     output_topic: /rove/robot/flippers_cmd
     stale_delay: 0.5
     qos_depth: 1
