@@ -1,6 +1,6 @@
 [Unit]
 Description=Launches all nodes required for the control of Rove
-After=network.target
+After=multi-user.target
 
 [Service]
 Environment="ROS_LOG_DIR=/var/log/ros2"

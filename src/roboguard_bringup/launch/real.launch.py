@@ -7,6 +7,7 @@ from launch.actions import (
     ExecuteProcess,
     DeclareLaunchArgument,
     EmitEvent,
+    TimerAction,
 )
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -23,19 +24,12 @@ from launch_ros.actions import Node
 from launch.event_handlers import OnProcessExit
 from launch.conditions import UnlessCondition
 from launch.events import Shutdown
-from launch.actions import TimerAction
 
 handlers = []
 
-def exit_on_error(actions=None):
-    if actions is None:
-        actions = []
-
+def exit_on_error(actions=[]):
     def pred(event, context):
-        if hasattr(event, "returncode") and event.returncode != 0:
-            return [*actions, EmitEvent(event=Shutdown())]
-        return actions
-
+        return [*actions, EmitEvent(event=Shutdown())] if event.returncode != 0 else actions
     return pred
 
 def exit_on_crash(node: Node, actions=[]):

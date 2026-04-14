@@ -69,7 +69,7 @@ def compress_bag(context, *args, **kwargs):
                     "--output-options", config_path,
                 ],
                 check=True,
-                timeout=600,
+                timeout=1200,
             )
 
             if not os.path.isdir(compressed_dir) or not any(
@@ -127,7 +127,11 @@ def generate_launch_description():
             "-a",
             "--output", ros_log_dir + "/bag",
             "--storage", "mcap",
-            "--max-cache-size", "0",
+            "--max-cache-size", str(1 * 1024), # 1KB
+            "--compression-mode", "file",
+            "--storage-preset-profile", "zstd_fast",
+            "--max-bag-size", str(1 * 1024 * 1024 * 1024),  # 1GB
+            "--max-bag-duration", str(10 * 60),             # 10 minutes in seconds
         ],
         output="screen",
     )
