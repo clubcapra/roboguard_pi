@@ -172,6 +172,6 @@ def generate_launch_description():
             estop_control,
             input_manager,
             *demux_nodes,
-            udp_bridge,
+            # udp_bridge,
         ]
     )
