@@ -138,7 +138,7 @@ def generate_launch_description():
         package="controller_manager",
         executable="ros2_control_node",
         output="both",
-        parameters=[{"robot_description": robot_desc}, robot_controllers],
+        parameters=[robot_controllers],
     )
     
     control_node_start = RegisterEventHandler(
@@ -162,12 +162,17 @@ def generate_launch_description():
         condition=UnlessCondition(use_mock_odrives),
     )
     
-    control_node_mock = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        output="both",
-        parameters=[{"robot_description": robot_desc}, robot_controllers],
-        condition=IfCondition(use_mock_odrives),
+    control_node_mock = TimerAction(
+        period=1.0,
+        actions=[
+            Node(
+                package="controller_manager",
+                executable="ros2_control_node",
+                output="both",
+                parameters=[robot_controllers],
+                condition=IfCondition(use_mock_odrives),
+            )
+        ],
     )
 
     joint_state_broadcaster_spawner = TimerAction(
