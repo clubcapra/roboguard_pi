@@ -37,15 +37,17 @@ odrive_controller:
 
 diff_drive_controller:
   ros__parameters:
-    right_wheel_names: ["track_fr_j", "track_rr_j"]
-    left_wheel_names: ["track_fl_j", "track_rl_j"]
+    # Reversed since we are currently running rove backwards
+    left_wheel_names: ["track_fr_j", "track_rr_j"]
+    right_wheel_names: ["track_fl_j", "track_rl_j"]
 
     wheel_separation: 0.230
     wheel_radius: 0.11
 
     wheel_separation_multiplier: 10.0
-    left_wheel_radius_multiplier: -0.0325
-    right_wheel_radius_multiplier: 0.0325
+    # These are also reversed
+    left_wheel_radius_multiplier: 0.0325
+    right_wheel_radius_multiplier: -0.0325
 
     publish_rate: 20.0
     odom_frame_id: odom
@@ -61,7 +63,7 @@ diff_drive_controller:
     # publish_limited_velocity: true
     # publish_cmd: true
     # velocity_rolling_window_size: 10
-    use_stamped_vel: false
+    use_stamped_vel: true
 
     # Maybe we should set this to false since the max velocity is set from ODrive config
     linear.x.has_velocity_limits: true

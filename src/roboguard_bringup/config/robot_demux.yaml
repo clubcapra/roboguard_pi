@@ -1,0 +1,39 @@
+# Runs on robot
+/robot_cmd_vel_demux:
+  ros__parameters:
+    input_type: geometry_msgs/msg/TwistStamped
+    
+    input_topics:
+      - /rove/to_robot/cmd_vel
+      - /rove/lora/cmd_vel
+    output_topic: /rove/robot/comm/cmd_vel
+    stale_delay: 0.5
+    qos_depth: 1
+    qos_reliability: best_effort
+    qos_durability: volatile
+
+/robot_enable_demux:
+  ros__parameters:
+    input_type: capra_control_msgs/msg/BoolStamped
+    output_type: std_msgs/msg/Bool
+    input_topics:
+      - /rove/to_robot/enable_stamped
+      - /rove/lora/enable_stamped
+    output_topic: /rove/robot/enable
+    stale_delay: 0.5
+    qos_depth: 1
+    qos_reliability: best_effort
+    qos_durability: volatile
+
+/robot_estop_demux:
+  ros__parameters:
+    input_type: capra_control_msgs/msg/BoolStamped
+    output_type: std_msgs/msg/Bool
+    input_topics:
+      - /rove/to_robot/estop_stamped
+      - /rove/lora/estop_stamped
+    output_topic: /rove/robot/estop
+    stale_delay: 0.5
+    qos_depth: 1
+    qos_reliability: best_effort
+    qos_durability: volatile

@@ -33,15 +33,17 @@ RUN apt-get update && apt-get install -y \
     wget \
     lsb-release \
     gnupg \
-    curl
+    curl \
+    python3-evdev \
+    libboost-all-dev
+
+# evdev is required for input_manager
+# libboost-all-dev is required for ovis
 
 # Change user
 RUN chown $USER_UID:$USER_GID /workspace/$USERNAME
 
 USER $USERNAME
-
-# Copy to preload the ros packages
-# COPY ./ /workspace/$USERNAME/
 
 # Source the ROS setup file
 RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> ~/.bashrc
@@ -50,8 +52,8 @@ COPY --chown=$USERNAME ./ /workspace/$USERNAME
 
 RUN cd /workspace/$USERNAME
 
-# Add needed packages
-RUN vcs import src < roboguard.repos
+# Required for local testing
+RUN git submodule update --init --recursive
 
 # Rosdep update
 RUN bash -c "source /opt/ros/humble/setup.bash && \

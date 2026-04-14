@@ -1,0 +1,44 @@
+[submodule "src/better_odrive"]
+	path = src/better_odrive
+	url = https://github.com/clubcapra/better_odrive.git
+	branch = bug-fix
+[submodule "src/capra_control_msgs"]
+	path = src/capra_control_msgs
+	url = https://github.com/clubcapra/capra_control_msgs.git
+	branch = new_controls
+[submodule "src/capra_flippers_teleop"]
+	path = src/capra_flippers_teleop
+	url = https://github.com/clubcapra/capra_flippers_teleop.git
+	branch = main
+[submodule "src/capra_joy_to_bool"]
+	path = src/capra_joy_to_bool
+	url = https://github.com/clubcapra/capra_joy_to_bool.git
+	branch = main
+[submodule "src/capra_tank_twist"]
+	path = src/capra_tank_twist
+	url = https://github.com/clubcapra/capra_tank_twist.git
+	branch = main
+[submodule "src/capra_teleop_mapper"]
+	path = src/capra_teleop_mapper
+	url = https://github.com/clubcapra/capra_teleop_mapper.git
+	branch = humble
+[submodule "src/joy_mux"]
+	path = src/joy_mux
+	url = https://github.com/clubcapra/joy_mux.git
+	branch = main
+[submodule "src/ovis_ros2"]
+	path = src/ovis_ros2
+	url = https://github.com/clubcapra/ovis_ros2.git
+	branch = master
+[submodule "src/input_manager"]
+	path = src/input_manager
+	url = https://github.com/clubcapra/input_manager.git
+	branch = master
+[submodule "src/capra_twist_mux"]
+	path = src/capra_twist_mux
+	url = https://github.com/IliTheButterfly/capra_twist_mux.git
+	branch = humble
+[submodule "src/capra_stamp_demux"]
+	path = src/capra_stamp_demux
+	url = https://github.com/clubcapra/capra_stamp_demux.git
+	branch = main

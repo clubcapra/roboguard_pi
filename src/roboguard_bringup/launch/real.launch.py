@@ -17,6 +17,7 @@ from launch.substitutions import (
     FindExecutable,
     AndSubstitution,
     NotSubstitution,
+    IfElseSubstitution,
 )
 from launch_ros.actions import Node
 from launch.event_handlers import OnProcessExit
@@ -102,15 +103,11 @@ def generate_launch_description():
     can_prefix = "distrobox-host-exec " if IN_DISTROBOX else ""
 
     start_can_cmd = ExecuteProcess(
-        cmd=[
-            [
-                f"{can_prefix}sudo ip link set down can0 && "
-                f"{can_prefix}sudo ip link set can0 type can bitrate 500000 && "
-                f"{can_prefix}sudo ifconfig can0 txqueuelen 1000 && "
-                f"{can_prefix}sudo ip link set up can0 && "
-                "sleep 5"
-            ]
-        ],
+        cmd=[f"{can_prefix}sudo ip link set down can0 && "
+            f"{can_prefix}sudo ip link set can0 type can bitrate 500000 && "
+            f"{can_prefix}sudo ifconfig can0 txqueuelen 1000 && "
+            f"{can_prefix}sudo ip link set up can0 && "
+            "sleep 5"],
         shell=True,
         condition=UnlessCondition(use_mock_odrives),
     )
@@ -143,82 +140,95 @@ def generate_launch_description():
         parameters=[{"robot_description": robot_desc}, robot_controllers],
     )
     
-    can_shutdown = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=control_node,
-            on_exit=exit_on_error([stop_can_cmd]),
+    control_node_start = RegisterEventHandler(
+        OnProcessExit(
+            target_action=start_can_cmd,
+            on_exit=[
+                control_node,
+            ],
         ),
         condition=UnlessCondition(use_mock_odrives),
     )
-
-    joint_state_broadcaster_spawner = Node(
+    
+    can_shutdown = RegisterEventHandler(
+        OnProcessExit(
+            target_action=control_node,
+            on_exit=[
+                stop_can_cmd,
+                EmitEvent(event=Shutdown())
+            ],
+        ),
+        condition=UnlessCondition(use_mock_odrives),
+    )
+    
+    control_node_mock = Node(
         package="controller_manager",
-        executable="spawner",
-        arguments=[
-            "joint_state_broadcaster",
-            "--controller-manager",
-            "/controller_manager",
+        executable="ros2_control_node",
+        output="both",
+        parameters=[{"robot_description": robot_desc}, robot_controllers],
+        condition=IfCondition(use_mock_odrives),
+    )
+
+    joint_state_broadcaster_spawner = TimerAction(
+        period=2.0,
+        actions=[
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                arguments=[
+                    "joint_state_broadcaster",
+                    "--controller-manager",
+                    "/controller_manager",
+                ],
+            )
         ],
     )
 
     delay_joint_state_after_hardware_start = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=start_can_cmd,
-            on_exit=[control_node, joint_state_broadcaster_spawner],
+            on_exit=[joint_state_broadcaster_spawner],
         ),
     )
 
-    def create_controller_node(node_name: str, after):
-        robot_controller_spawner = Node(
-            package="controller_manager",
-            executable="spawner",
-            arguments=[node_name, "-c", "/controller_manager"],
-        )
-
+    def create_controller(node_name):
         kwargs = {}
-        if node_name in controller_conditions.keys():
-            kwargs = {"condition": controller_conditions[node_name]}
-
-        # Delay start of robot_controller after `joint_state_broadcaster`
-        delay_robot_controller_spawner_after = RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=after,
-                on_exit=exit_on_error([robot_controller_spawner]),
-            ),
-            **kwargs,
+        if node_name in controller_conditions:
+            kwargs = {"condition":controller_conditions[node_name]}
+        return TimerAction(
+            period=3.0,
+            actions=[
+                Node(
+                    package="controller_manager",
+                    executable="spawner",
+                    arguments=[node_name, "-c", "/controller_manager"],
+                    **kwargs,
+                )
+            ],
         )
-        return delay_robot_controller_spawner_after, robot_controller_spawner
-
-    delayed_controller_nodes = list()
-    last_spawner = joint_state_broadcaster_spawner
-    for controller in controller_nodes:
-        node, spawner = create_controller_node(controller, last_spawner)
-        delayed_controller_nodes.append(node)
-        last_spawner = spawner
 
     # Twist mux
     twist_mux = exit_on_crash(
         Node(
-            package="twist_mux",
+            package="capra_twist_mux",
             executable="twist_mux",
             output="screen",
             parameters=[pkg_roboguard_bringup + "/config/twist_mux.yaml"],
             remappings={
-                ("/cmd_vel_out", "/rove/cmd_vel"),
-                ("nav_vel", "/rove/nav/cmd_vel"),
-                ("twist_vel", "/rove/twist/cmd_vel"),
-                ("tank_vel", "/rove/tank/cmd_vel"),
+                ("/cmd_vel_out", "/rove/robot/cmd_vel"),
+                ("nav_vel", "/rove/robot/nav/cmd_vel"),
+                ("remote_vel", "/rove/robot/comm/cmd_vel"),
             },
         )
     )
 
-    # Relay messages from /rove/cmd_vel -> /diff_drive_controller/cmd_vel_unstamped
+    # Relay messages from /rove/cmd_vel -> /diff_drive_controller/cmd_vel
     cmd_vel_relay = Node(
         package="topic_tools",
         executable="relay",
         name="diff_drive_remap",
         output="screen",
-        arguments=("/rove/cmd_vel", "/diff_drive_controller/cmd_vel_unstamped"),
+        arguments=("/rove/robot/cmd_vel", "/diff_drive_controller/cmd_vel"),
     )
 
     # Relay messages for odrive enables
@@ -228,11 +238,25 @@ def generate_launch_description():
             executable="relay",
             name=f"track_{track}_remap",
             output="screen",
-            arguments=("/rove/enable", f"/odrive_controller/enable/track_{track}_j"),
+            arguments=("/rove/robot/enable", f"/odrive_controller/enable/track_{track}_j"),
         )
         for track in ["rl", "rr", "fl", "fr"]
     ]
-
+    
+    # Demuxes
+    demux_config_file = os.path.join(pkg_roboguard_bringup, "config", "robot_demux.yaml")
+    demuxes = ["robot_cmd_vel_demux", "robot_enable_demux", "robot_estop_demux"]
+    demux_nodes = [
+        Node(
+            package="capra_stamp_demux",
+            executable="stamp_demux",
+            name=name,
+            parameters=[demux_config_file],
+            output="screen",
+        )
+        for name in demuxes
+    ]
+    
     # Rosbag logging
     rosbag_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -241,23 +265,31 @@ def generate_launch_description():
         condition=IfCondition(with_rosbag),
     )
 
-    return LaunchDescription(
-        [
-            # Declare args
-            use_mock_odrives_dec,
-            use_mock_ovis_dec,
-            with_ovis_dec,
-            with_rosbag_dec,
-            # Start nodes
-            rosbag_launch,
-            start_can_cmd,
-            can_shutdown,
-            *enable_relays,
-            robot_state_publisher,
-            delay_joint_state_after_hardware_start,
-            *delayed_controller_nodes,
-            twist_mux,
-            cmd_vel_relay,
-            *handlers,
-        ]
-    )
+    return LaunchDescription([
+        use_mock_odrives_dec,
+        use_mock_ovis_dec,
+        with_ovis_dec,
+        with_rosbag_dec,
+
+        rosbag_launch,
+
+        # CAN only in hardware mode
+        start_can_cmd,
+
+        # control node (mock OR hardware)
+        control_node_mock,
+        control_node_start,
+
+        can_shutdown,
+
+        robot_state_publisher,
+        twist_mux,
+        cmd_vel_relay,
+
+        joint_state_broadcaster_spawner,
+        *[create_controller(c) for c in controller_nodes],
+
+        *enable_relays,
+        
+        *demux_nodes,
+    ])

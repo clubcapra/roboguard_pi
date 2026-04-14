@@ -1,11 +1,20 @@
+import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     # Get the launch directory
     pkg_roboguard_bringup = get_package_share_directory("roboguard_bringup")
+    pkg_input_manager = get_package_share_directory("input_manager")
+    
+    default_config = os.path.join(pkg_input_manager, 'config', 'default_config.yaml')
+    
+    # Parameters
+    input_config_dec = DeclareLaunchArgument("input_config", default_value=default_config)
+    input_config = LaunchConfiguration("input_config")
     
     joy_config_file = pkg_roboguard_bringup + "/config/teleop_params.yaml"
     
@@ -16,7 +25,7 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy_mux_topic", "/rove/joy"),
+            ("/joy_mux_topic", "/rove/station/joy"),
         ],
     )
     
@@ -28,8 +37,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/scheme_selector/joy", "/rove/joy"),
-            ("/scheme_selector/bool", "/rove/teleop_select"),
+            ("/scheme_selector/joy", "/rove/station/joy"),
+            ("/scheme_selector/bool", "/rove/station/teleop_select"),
         ],
     )
     
@@ -40,10 +49,10 @@ def generate_launch_description():
         name="scheme_mapper",
         output="screen",
         remappings=[
-            ("/joy1", "/rove/twist/joy"),
-            ("/joy2", "/rove/tank/joy"),
-            ("/joy_select", "/rove/teleop_select"),
-            ("/joy", "/rove/joy"),
+            ("/joy1", "/rove/station/twist/joy"),
+            ("/joy2", "/rove/station/tank/joy"),
+            ("/joy_select", "/rove/station/teleop_select"),
+            ("/joy", "/rove/station/joy"),
         ],
     )
     
@@ -54,8 +63,8 @@ def generate_launch_description():
         name="teleop_twist_joy_node",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy", "/rove/twist/joy"),
-            ("/cmd_vel", "/rove/twist/cmd_vel"),
+            ("/joy", "/rove/station/twist/joy"),
+            ("/cmd_vel", "/rove/station/twist/cmd_vel"),
         ],
     )
     
@@ -66,8 +75,8 @@ def generate_launch_description():
         name="tank_twist_node",
         parameters=[joy_config_file],
         remappings=[
-            ("/joy", "/rove/tank/joy"),
-            ("/cmd_vel", "/rove/tank/cmd_vel"),
+            ("/joy", "/rove/station/tank/joy"),
+            ("/cmd_vel", "/rove/station/tank/cmd_vel"),
         ],
     )
     
@@ -78,8 +87,8 @@ def generate_launch_description():
         name="flippers_teleop",
         parameters=[joy_config_file],
         remappings=[
-            ("/flippers_teleop/joy", "/rove/joy"),
-            ("/flippers_teleop/flippers", "/rove/teleop/flippers_cmd"),
+            ("/flippers_teleop/joy", "/rove/station/joy"),
+            ("/flippers_teleop/flippers", "/rove/to_robot/teleop/flippers_cmd"),
         ],
     )
 
@@ -91,8 +100,8 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/enable_node/joy", "/rove/joy"),
-            ("/enable_node/bool", "/rove/enable"),
+            ("/enable_node/joy", "/rove/station/joy"),
+            ("/enable_node/bool", "/rove/to_robot/enable_stamped"),
         ],
     )
     
@@ -104,13 +113,45 @@ def generate_launch_description():
         output="screen",
         parameters=[joy_config_file],
         remappings=[
-            ("/estop_control/joy", "/rove/joy"),
-            ("/estop_control/bool", "/rove/estop"),
+            ("/estop_control/joy", "/rove/station/joy"),
+            ("/estop_control/bool", "/rove/to_robot/estop_stamped"),
         ],
     )
     
+    # input_manager
+    input_manager = Node(
+        package='input_manager',
+        executable='input_manager',
+        name='input_manager',
+        output='screen',
+        parameters=[{
+            'config': input_config,
+            'no_gui': True,
+        }],
+        remappings=[
+            ("/joy_input/steam", "/rove/station/steamdeck/joy"),
+            ("/joy_input/xbox_bl_controller_laptop", "/rove/station/xbox/bluetooth/joy"),
+            ("/joy_input/xbox_usb_controller_laptop", "/rove/station/xbox/usb/joy"),
+        ]
+    )
+    
+    # Demuxes
+    demux_config_file = os.path.join(pkg_roboguard_bringup, "config", "station_demux.yaml")
+    demuxes = ["station_cmd_vel_demux"]
+    demux_nodes = [
+        Node(
+            package="capra_stamp_demux",
+            executable="stamp_demux",
+            name=name,
+            parameters=[demux_config_file],
+            output="screen",
+        )
+        for name in demuxes
+    ]
+    
     return LaunchDescription(
         [
+            input_config_dec,
             joy_mux,
             scheme_selector,
             teleop_mapper,
@@ -119,5 +160,7 @@ def generate_launch_description():
             flippers_teleop,
             enable_node,
             estop_control,
+            input_manager,
+            *demux_nodes,
         ]
     )

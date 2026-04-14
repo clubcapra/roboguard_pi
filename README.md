@@ -45,11 +45,15 @@ Requires Ubuntu 22.04 LTS.
 1. Install prerequisites:
    - [ROS2 Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html) (use `ros-humble-desktop-full`)
 
-2. Setup workspace:
+2. Install dependencies (from `input_manager`):
    ```bash
-   git clone https://github.com/clubcapra/roboguard_pi.git
+   sudo apt install python3-evdev
+   ```
+
+3. Setup workspace:
+   ```bash
+   git clone --recurse-submodules https://github.com/clubcapra/roboguard_pi.git
    cd roboguard_pi
-   vcs import src < roboguard.repos
    sudo rosdep init
    rosdep update
    rosdep install --from-paths src --ignore-src -r -y
@@ -101,10 +105,19 @@ In order to control the robot, you need to run the teleop nodes:
 ros2 launch roboguard_bringup teleop.launch.py
 ```
 
+## Topic naming convention
+
+Topics that start with `/rove` are topics that are handled.
+Topics that start with `/rove/station` are topics that should not be listened to from the robot, they should stay on the station (control station).
+topics that start with `/rove/robot` are topics that should stay on the robot.
+Topics that start with `/rove/to_robot` are topics that should be sent from station to robot.
+Topics that start with `/rove/to_station` are topics that should be sent from robot to station.
+
 ## Contributing
 
 Before pushing your code, you should try to deploy it by using:
 ```bash
-docker compose build --build-arg USER_UID=$(id -u) --build-arg USER_GID=$(id -g) --build-arg USERNAME=$(id -un)
-docker compose run devcontainer bash -c "colcon build --symlink-install ; colcon test --packages-ignore micro_ros_setup"
+run_test
 ```
+This will do essentially what the github action will do. It will start a docker, pull dependencies, install required packages and test the code.
+This does not ensure the code is working, but it helps catch issues before making a pull request.
