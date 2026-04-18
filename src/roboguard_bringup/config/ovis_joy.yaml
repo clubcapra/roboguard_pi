@@ -1,0 +1,77 @@
+# =============================================================================
+# ovis_joy.yaml  —  teleop_twist_joy config for the Ovis 6-DOF arm
+# Controller: Xbox-style (adjust axis/button indices for your controller)
+#
+# IMPORTANT: the top-level key must exactly match the node name= in the
+# launch file. Here it matches name="teleop_twist_joy" in ovis_teleop.launch.py
+# =============================================================================
+#
+# Axis observations from your controller:
+#   LS_X  id:0  | left  = -1,         right = +1
+#   LS_Y  id:1  | up    = -1,         down  = +1   ← note inverted!
+#   RS_X  id:3  | left  = -1,         right = +1
+#   RS_Y  id:4  | up    = -1,         down  = +1   ← note inverted!
+#   DPAD_X id:6 | left  ≈ -1,         right ≈ +1   (hat axis, may be ±1 not float)
+#   DPAD_Y id:7 | up    ≈ -1,         down  ≈ +1   ← note inverted!
+#
+# All "up = negative" axes are corrected by negating the scale below.
+# =============================================================================
+
+ovis_teleop_twist_joy_node:           # ← must match name= in the launch file
+  ros__parameters:
+
+    require_enable_button: true
+    enable_button: 4              # LB — hold to enable motion
+
+    # -------------------------------------------------------------------------
+    # Linear velocity (m/s) — expressed in end-effector frame after IK fix
+    # -------------------------------------------------------------------------
+    axis_linear:
+      x: 1                        # LS_Y  → in/out along tool axis
+      y: 0                        # LS_X  → left/right of tool
+      z: 7                        # DPAD_Y → up/down of tool
+
+    scale_linear:
+      x: -0.10                    # LS_Y up = -1, we want +X = forward  → negate
+      y: -0.10                    # LS_X left = -1, we want +Y = left   → negate
+      z: -3276.0                  # DPAD_Y up = -1, we want +Z = up     → negate
+
+    # -------------------------------------------------------------------------
+    # Angular velocity (rad/s) — expressed in end-effector frame after IK fix
+    # -------------------------------------------------------------------------
+    axis_angular:
+      yaw:   3                    # RS_X  → rotate around tool Z
+      pitch: 4                    # RS_Y  → tilt up/down
+      roll:  6                    # DPAD_X → roll around tool axis
+
+    scale_angular:
+      yaw:   -0.40                # RS_X left = -1, want +yaw = CCW    → negate
+      pitch: -0.40                # RS_Y up   = -1, want +pitch = up   → negate
+      roll:  -13106.0             # DPAD_X left = -1                   → negate
+
+    publish_stamped_twist: true   # required — IK node expects TwistStamped
+
+# =============================================================================
+# Sign tuning guide
+# -----------------
+# If a motion is backwards from what you expect, flip the sign of its scale.
+# Do one axis at a time:
+#   1. Hold LB, push stick fully in one direction
+#   2. Watch which way the arm moves
+#   3. If wrong direction, negate the scale value
+#
+# DPAD note
+# ---------
+# Some controllers report DPAD as buttons (ids 11-14) rather than axes.
+# If DPAD isn't working, run:
+#   ros2 topic echo /joy
+# and check whether pressing DPAD changes axes[] or buttons[].
+# If it's buttons, replace DPAD with trigger axes instead.
+# =============================================================================
+
+# LS_Y id: 1 | up is -1
+# LS_X id: 0 | left is -1
+# RS_Y id: 4 | up is -1
+# RS_X id: 3 | left is -1
+# DPAD_Y id: 7 | up is -3.0518509447574615e-05
+# DPAD_X id: 6 | left is -3.0518509447574615e-05
