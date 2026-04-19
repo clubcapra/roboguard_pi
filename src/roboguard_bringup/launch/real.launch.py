@@ -18,7 +18,6 @@ from launch.substitutions import (
     FindExecutable,
     AndSubstitution,
     NotSubstitution,
-    IfElseSubstitution,
 )
 from launch_ros.actions import Node
 from launch.event_handlers import OnProcessExit
@@ -140,7 +139,7 @@ def generate_launch_description():
         output="both",
         parameters=[{"robot_description": robot_desc}, robot_controllers],
     )
-    
+
     control_node_start = RegisterEventHandler(
         OnProcessExit(
             target_action=start_can_cmd,
@@ -150,24 +149,29 @@ def generate_launch_description():
         ),
         condition=UnlessCondition(use_mock_odrives),
     )
-    
+
+    # On hardware: always tear down CAN when control_node exits; only emit
+    # Shutdown if it exited non-zero (crash). Clean shutdowns fall through
+    # to the normal launch termination.
     can_shutdown = RegisterEventHandler(
         OnProcessExit(
             target_action=control_node,
-            on_exit=[
-                stop_can_cmd,
-                EmitEvent(event=Shutdown())
-            ],
+            on_exit=exit_on_error(actions=[stop_can_cmd]),
         ),
         condition=UnlessCondition(use_mock_odrives),
     )
-    
-    control_node_mock = Node(
-        package="controller_manager",
-        executable="ros2_control_node",
-        output="both",
-        parameters=[{"robot_description": robot_desc}, robot_controllers],
-        condition=IfCondition(use_mock_odrives),
+
+    # Mock mode: no CAN teardown needed, but still fail the launch if the
+    # mock control node crashes (exit_on_crash registers a handler that is
+    # later spread into the LaunchDescription via *handlers).
+    control_node_mock = exit_on_crash(
+        Node(
+            package="controller_manager",
+            executable="ros2_control_node",
+            output="both",
+            parameters=[{"robot_description": robot_desc}, robot_controllers],
+            condition=IfCondition(use_mock_odrives),
+        )
     )
 
     joint_state_broadcaster_spawner = TimerAction(
@@ -293,4 +297,6 @@ def generate_launch_description():
         *enable_relays,
         
         *demux_nodes,
+
+        *handlers,
     ])

@@ -3,6 +3,10 @@ build/
 log/
 install/
 
+roboguard_build/
+roboguard_log/
+roboguard_install/
+
 # Ignore everything in src except local and submodule packages
 src/*
 !src/roboguard_*
