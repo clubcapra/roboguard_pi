@@ -53,7 +53,8 @@ COPY --chown=$USERNAME ./ /workspace/$USERNAME
 RUN cd /workspace/$USERNAME
 
 # Required for local testing
-RUN git submodule update --init --recursive
+RUN git submodule sync --recursive \
+    && git submodule update --init --recursive
 
 # Rosdep update
 RUN bash -c "source /opt/ros/humble/setup.bash && \

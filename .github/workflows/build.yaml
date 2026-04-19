@@ -26,3 +26,35 @@ jobs:
     - name: Test roboguard
       run: |
         docker compose run devcontainer bash -c "colcon test --packages-ignore micro_ros_setup"
+
+    - name: Launch test - real.launch.py (with ovis, mocked)
+      run: |
+        docker compose run devcontainer bash -c "
+          source /opt/ros/humble/setup.bash &&
+          source install/setup.bash &&
+          ./ci_launch_test.sh real-with-ovis roboguard_bringup real.launch.py \
+            use_mock_odrives:=true \
+            use_mock_ovis:=true \
+            with_ovis:=true \
+            with_rosbag:=false
+        "
+
+    - name: Launch test - real.launch.py (without ovis, mocked)
+      run: |
+        docker compose run devcontainer bash -c "
+          source /opt/ros/humble/setup.bash &&
+          source install/setup.bash &&
+          ./ci_launch_test.sh real-no-ovis roboguard_bringup real.launch.py \
+            use_mock_odrives:=true \
+            use_mock_ovis:=true \
+            with_ovis:=false \
+            with_rosbag:=false
+        "
+
+    - name: Launch test - teleop.launch.py
+      run: |
+        docker compose run devcontainer bash -c "
+          source /opt/ros/humble/setup.bash &&
+          source install/setup.bash &&
+          ./ci_launch_test.sh teleop roboguard_bringup teleop.launch.py
+        "

@@ -6,8 +6,28 @@ services:
       args:
         - USER_UID=${USER_UID:-1000}
         - USER_GID=${USER_GID:-1000}
+    # Map container UID/GID 1:1 to host user under rootless Podman so the
+    # 'roboguard' user in the image (UID 1000) can read/write host-mounted
+    # files owned by the host user (UID 1000). Without this, UID 1000 inside
+    # the container maps to a subordinate UID on the host and can't write to
+    # the mount. On Docker (non-rootless) this line is silently ignored.
+    userns_mode: "keep-id"
     volumes:
       - ./:/workspace/roboguard
+      # Give the container its own build/install/log directories.
+      # These are named volumes owned and managed by the container engine,
+      # which means:
+      #   - CMake caches inside them reference container paths consistently
+      #     across runs (no host-vs-container absolute-path mismatches).
+      #   - Running `colcon build` on the host directly has no effect on
+      #     the container, and vice versa — the two are fully decoupled.
+      #   - They persist between `docker compose run` invocations, so
+      #     incremental builds still work.
+      # To fully wipe container build state, run:
+      #   docker compose down -v
+      - roboguard_build:/workspace/roboguard/build
+      - roboguard_install:/workspace/roboguard/install
+      - roboguard_log:/workspace/roboguard/log
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /tmp/.Xauthority:/tmp/.Xauthority:rw
       - /dev/input:/dev/input:rw
@@ -18,3 +38,8 @@ services:
     command: sleep infinity
     network_mode: "host"
     privileged: true
+
+volumes:
+  roboguard_build:
+  roboguard_install:
+  roboguard_log:

@@ -117,7 +117,7 @@ Topics that start with `/rove/to_station` are topics that should be sent from ro
 
 Before pushing your code, you should try to deploy it by using:
 ```bash
-run_test
+run-test.sh
 ```
 This will do essentially what the github action will do. It will start a docker, pull dependencies, install required packages and test the code.
 This does not ensure the code is working, but it helps catch issues before making a pull request.
