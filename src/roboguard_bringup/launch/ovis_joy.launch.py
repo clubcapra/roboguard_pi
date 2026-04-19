@@ -45,23 +45,12 @@ def generate_launch_description():
 
     # Ovis velocity IK node
     ik_node = Node(
-        package="ovis_servo",
-        executable="ovis_ik",
+        package="ovis_ik",
+        executable="velocity_node",
         name="ovis_velocity_ik",
-        parameters=[{
-            "prefix":        LaunchConfiguration("prefix"),
-            "end_effector":  "ovis_end_effector",
-            "damping":       LaunchConfiguration("damping"),
-            "max_joint_vel": LaunchConfiguration("max_joint_vel"),
-            "publish_rate":  100.0,
-            "cmd_timeout":   0.5,
-            "controller_joints": [
-                "ovis_joint_1", "ovis_joint_2", "ovis_joint_3",
-                "ovis_joint_4", "ovis_joint_5", "ovis_joint_6",
-            ],
-        }],
         remappings=[
-            ("/ovis/joint_velocity_cmd", "/ovis_controller/commands"),
+            ("/cmd_vel", "/ovis/cmd_cartesian_vel"),
+            ("/joint_vel", "/ovis_controller/commands"),
         ],
         output="screen",
     )

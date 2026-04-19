@@ -40,6 +40,10 @@ RUN apt-get update && apt-get install -y \
 # evdev is required for input_manager
 # libboost-all-dev is required for ovis
 
+# Ovis dependencies
+# Numpy version is important for robotics toolbox
+RUN python3 -m pip install roboticstoolbox-python numpy==1.24.4
+
 # Change user
 RUN chown $USER_UID:$USER_GID /workspace/$USERNAME
 
@@ -54,6 +58,7 @@ RUN cd /workspace/$USERNAME
 
 # Required for local testing
 RUN git submodule update --init --recursive
+
 
 # Rosdep update
 RUN bash -c "source /opt/ros/humble/setup.bash && \
