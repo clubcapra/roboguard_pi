@@ -27,27 +27,27 @@ ovis_teleop_twist_joy_node:           # ← must match name= in the launch file
     # Linear velocity (m/s) — expressed in end-effector frame after IK fix
     # -------------------------------------------------------------------------
     axis_linear:
-      x: 1                        # LS_Y  → in/out along tool axis
+      x: 7                        # DPAD_Y  → in/out along tool axis
       y: 0                        # LS_X  → left/right of tool
-      z: 7                        # DPAD_Y → up/down of tool
+      z: 1                        # LS_Y → up/down of tool
 
     scale_linear:
-      x: -0.10                    # LS_Y up = -1, we want +X = forward  → negate
+      x: 0.05                     # DPAD_Y up = -1, we want +X = forward  → negate
       y: -0.10                    # LS_X left = -1, we want +Y = left   → negate
-      z: -3276.0                  # DPAD_Y up = -1, we want +Z = up     → negate
+      z: -0.10                    # LS_Y up = -1, we want +Z = up     → negate
 
     # -------------------------------------------------------------------------
     # Angular velocity (rad/s) — expressed in end-effector frame after IK fix
     # -------------------------------------------------------------------------
     axis_angular:
-      yaw:   3                    # RS_X  → rotate around tool Z
+      yaw:   6                    # DPAD_X  → rotate around tool Z
       pitch: 4                    # RS_Y  → tilt up/down
-      roll:  6                    # DPAD_X → roll around tool axis
+      roll:  3                    # RS_X → roll around tool axis
 
     scale_angular:
-      yaw:   -0.40                # RS_X left = -1, want +yaw = CCW    → negate
+      yaw:   0.20                 # DPAD_X left = -1, want +yaw = CCW    → negate
       pitch: -0.40                # RS_Y up   = -1, want +pitch = up   → negate
-      roll:  -13106.0             # DPAD_X left = -1                   → negate
+      roll:  -0.40                # RS_X left = -1                   → negate
 
     publish_stamped_twist: true   # required — IK node expects TwistStamped
 
