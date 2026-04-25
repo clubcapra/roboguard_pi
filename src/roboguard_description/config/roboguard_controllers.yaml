@@ -3,7 +3,7 @@ controller_manager:
   ros__parameters:
     # KEEP THIS VALUE ABOVE 60 HZ
     # For some reason, ovis hates getting commands at less than 60 HZ
-    update_rate: 100  # Hz
+    update_rate: 60  # Hz
     
 
     joint_state_broadcaster:

@@ -10,7 +10,7 @@ def generate_launch_description():
     pkg_roboguard_bringup = get_package_share_directory("roboguard_bringup")
     pkg_input_manager = get_package_share_directory("input_manager")
     
-    default_config = os.path.join(pkg_input_manager, 'config', 'default_config.yaml')
+    default_config = os.path.join(pkg_input_manager, 'config', 'dev_config.yaml')
     
     # Parameters
     input_config_dec = DeclareLaunchArgument("input_config", default_value=default_config)

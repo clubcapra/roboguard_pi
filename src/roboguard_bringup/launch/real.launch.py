@@ -122,7 +122,7 @@ def generate_launch_description():
     # Controllers
     controller_nodes = ["odrive_controller", "diff_drive_controller", "ovis_controller"]
     controller_conditions = {
-        "ovis_controller": IfCondition(real_ovis_present),
+        # "ovis_controller": IfCondition(real_ovis_present),
     }
 
     ###### ROS2 control ######

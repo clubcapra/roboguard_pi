@@ -49,8 +49,12 @@ Requires Ubuntu 22.04 LTS.
    ```bash
    sudo apt install python3-evdev
    ```
+3. Install dependencies (from `ovis_ik`):
+   ```bash
+   python3 -m pip install roboticstoolbox-python numpy==1.24.4
+   ```
 
-3. Setup workspace:
+4. Setup workspace:
    ```bash
    git clone --recurse-submodules https://github.com/clubcapra/roboguard_pi.git
    cd roboguard_pi
