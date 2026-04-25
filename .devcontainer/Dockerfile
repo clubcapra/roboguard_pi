@@ -35,7 +35,8 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     curl \
     python3-evdev \
-    libboost-all-dev
+    libboost-all-dev \
+    python3-pip
 
 # evdev is required for input_manager
 # libboost-all-dev is required for ovis
