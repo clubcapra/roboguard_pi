@@ -265,6 +265,20 @@ def generate_launch_description():
         ),
         condition=IfCondition(with_rosbag),
     )
+    
+    # Ping
+    ping_config_file = os.path.join(pkg_roboguard_bringup, "config", "ping.yaml")
+    steamdeck_ping = Node(
+        package="capra_ping",
+        executable="capra_ping",
+        name="ping_steamdeck",
+        parameters=[ping_config_file],
+        output="screen",
+        remappings=[
+            ("/ping_steamdeck/latency", "/rove/station/ping/steamdeck/latency"),
+            ("/ping_steamdeck/connected", "/rove/station/ping/steamdeck/connected"),
+        ],
+    )
 
     return LaunchDescription([
         use_mock_odrives_dec,
@@ -291,6 +305,8 @@ def generate_launch_description():
         *[create_controller(c) for c in controller_nodes],
 
         *enable_relays,
+        
+        steamdeck_ping,
         
         *demux_nodes,
     ])
