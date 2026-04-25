@@ -42,3 +42,7 @@
 	path = src/capra_stamp_demux
 	url = https://github.com/clubcapra/capra_stamp_demux.git
 	branch = main
+[submodule "src/capra_ping"]
+	path = src/capra_ping
+	url = https://github.com/clubcapra/capra_ping.git
+	branch = main
