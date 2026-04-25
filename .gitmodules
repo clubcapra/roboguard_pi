@@ -42,3 +42,7 @@
 	path = src/capra_stamp_demux
 	url = https://github.com/clubcapra/capra_stamp_demux.git
 	branch = main
+[submodule "src/capra_lora_bridge"]
+	path = src/capra_lora_bridge
+	url = https://github.com/clubcapra/capra_lora_brifge.git
+	branch = main
